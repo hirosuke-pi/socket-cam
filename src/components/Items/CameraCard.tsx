@@ -1,3 +1,5 @@
+import { useState, useRef, useEffect, RefObject } from 'react'
+
 import {
   Box,
   Center,
@@ -7,9 +9,15 @@ import {
   AspectRatio,
   useColorModeValue,
   Image
-} from '@chakra-ui/react';
+} from '@chakra-ui/react'
+import ReactPlayer from 'react-player'
 
-export default function CameraCard() {
+type CameraStream = {
+  stream: MediaStream;
+  peerId: string;
+};
+
+const CameraCard = (props: { video: CameraStream}) => {
   return (
     <Center py={6}>
       <Box
@@ -24,14 +32,8 @@ export default function CameraCard() {
           mt={-6}
           mx={-6}
           mb={6}
-          >
-          <AspectRatio maxW='420px'>
-            <iframe
-              title='naruto'
-              src='https://www.youtube.com/embed/QhBnZ6NPOY0'
-              allowFullScreen
-            />
-          </AspectRatio>
+        >
+          <ReactPlayer url={props.video.stream} playing muted controls={true} width='420'/>
         </Box>
         <Stack>
           <Heading
@@ -48,3 +50,5 @@ export default function CameraCard() {
     </Center>
   );
 }
+
+export default CameraCard

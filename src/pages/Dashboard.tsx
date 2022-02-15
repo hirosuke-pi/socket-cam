@@ -1,6 +1,5 @@
 import { useParams } from 'react-router-dom'
-import { useState, useRef, useEffect } from 'react'
-
+import { useState, useRef, useEffect, RefObject } from 'react'
 
 import { 
   ChevronDownIcon,
@@ -35,17 +34,21 @@ import QRLinkModalButton from '../components/Items/QRLinkModalButton'
 
 import Peer, {MeshRoom} from 'skyway-js'
 
+type CameraStream = {
+  stream: MediaStream;
+  peerId: string;
+};
+
 const Dashboard = () => {
-  const peer = new Peer({ key: Config().SKYWAY_API_KEY });
+  const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY }));
   const params = useParams()
-  const theirRef = useRef<HTMLVideoElement>(null)
   const [roomId] = useState<string>(params.dashboardId || '')
-  const hostUrl = window.location.origin
+  const [remoteVideo, setRemoteVideo] = useState<CameraStream[]>([]);
   const toast = useToast()
 
   const onStartStream = () => {
     try {
-      const room = peer.joinRoom(roomId, {
+      const room = peer.current.joinRoom(roomId, {
         mode: 'mesh'
       })
 
@@ -61,14 +64,39 @@ const Dashboard = () => {
 
       room.on('peerJoin', peerId => {
         console.log(peerId)
+        toast.closeAll()
+        toast({
+          position: 'bottom',
+          title: 'カメラが追加されました。',
+          description: `ペアID: ${peerId}`,
+          status: 'success',
+          duration: 3000,
+        })
       });
 
-      room.on('stream', (stream: MediaStream) => {
-        const videoElm = theirRef.current;
-        if (videoElm) {
-          videoElm.srcObject = stream;
-          videoElm.play();
-        }
+      room.on('peerLeave', (peerId) => {
+        setRemoteVideo((prev) => {
+          return prev.filter((video) => {
+            if (video.peerId === peerId) {
+              video.stream.getTracks().forEach((track) => track.stop());
+            }
+            return video.peerId !== peerId
+          })
+        })
+
+        toast({
+          position: 'bottom',
+          title: 'カメラが切断されました。',
+          description: `ペアID: ${peerId}`,
+          duration: 3000,
+        })
+      })
+
+      room.on('stream', async (stream) => {
+        setRemoteVideo((prev) => [
+          ...prev,
+          { stream: stream, peerId: stream.peerId },
+        ]);
       })
     } catch (error) {
       console.log(error)
@@ -92,21 +120,27 @@ const Dashboard = () => {
     })
   }, [])
 
+  const showCamera = () => {
+    return remoteVideo.map((video) => {
+      return <CameraCard video={video} key={video.peerId} />;
+    });
+  };
+
   return (
     <>
       <Header/>
-        <Wrap justify={["center", "space-between"]}>
+        <Wrap justify={["center", "space-between"]} mr={5} ml={5}>
           <WrapItem>
-            <Heading mt={5} ml={5} mr={5} size="md" color="gray.700"><Center>ダッシュボード</Center></Heading>
+            <Heading ml={5} mr={5} mt={5} size="md" color="gray.700"><Center>ダッシュボード</Center></Heading>
           </WrapItem >
           <WrapItem >
             <QRLinkModalButton/>
             <Menu>
               <MenuButton
-                mr={5}
                 mt={2}
                 mb={2}
                 ml={2}
+                mr={5}
                 as={Button}
                 variant="solid"
                 colorScheme="blue"
@@ -125,9 +159,7 @@ const Dashboard = () => {
         </Wrap>
         <Box h="3px" m={2} bg="blue.400"/>
         <Wrap m={5}>
-          <CameraCard/>
-          <CameraCard/>
-          <video ref={theirRef} width="400px" autoPlay muted playsInline></video>
+          {showCamera()}
         </Wrap>
       <Footer/>
     </>
