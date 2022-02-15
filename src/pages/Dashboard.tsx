@@ -1,12 +1,37 @@
 import { useParams } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
-import QRCode from 'react-qr-code'
-import { DropdownButton, Dropdown } from 'react-bootstrap';
+
+
+import { 
+  ChevronDownIcon,
+  SmallAddIcon,
+  RepeatIcon,
+  LinkIcon,
+  DeleteIcon
+} from '@chakra-ui/icons'
+
+import {
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Button, 
+  Box,
+  Heading,
+  Wrap, 
+  WrapItem,
+  Spacer,
+  Divider,
+  Center,
+  useToast,
+  useDisclosure
+} from '@chakra-ui/react'
 
 import Config from '../Config'
 import Header from '../components/Layouts/Header'
 import Footer from '../components/Layouts/Footer'
 import CameraCard from '../components/Items/CameraCard'
+import QRLinkModalButton from '../components/Items/QRLinkModalButton'
 
 import Peer, {MeshRoom} from 'skyway-js'
 
@@ -16,7 +41,7 @@ const Dashboard = () => {
   const theirRef = useRef<HTMLVideoElement>(null)
   const [roomId] = useState<string>(params.dashboardId || '')
   const hostUrl = window.location.origin
-  const [headerMargin, setheaderMargin] = useState(false);
+  const toast = useToast()
 
   const onStartStream = () => {
     try {
@@ -25,7 +50,13 @@ const Dashboard = () => {
       })
 
       room.once('open', () => {
-        console.log('Joined')
+        toast.closeAll()
+        toast({
+          position: 'bottom',
+          description: "接続しました。",
+          status: "success",
+          duration: 3000,
+        })
       });
 
       room.on('peerJoin', peerId => {
@@ -41,33 +72,62 @@ const Dashboard = () => {
       })
     } catch (error) {
       console.log(error)
+      toast.closeAll()
+      toast({
+        position: 'bottom',
+        description: "サーバーに接続できませんでした。再度更新して接続してください。",
+        status: "error",
+        duration: 3000,
+      })
     }
   }
-//<QRCode value={`${hostUrl}/camera/${roomId}`} />
+
+  useEffect(() => {
+    setTimeout(onStartStream, 1000)
+
+    toast({
+      position: 'bottom',
+      description: "サーバーに接続しています...",
+      duration: null,
+    })
+  }, [])
+
   return (
     <>
       <Header/>
-        <main>
-          <article className="flex flex-row p-1 mr-5 ml-5  border-sky-300 border-b-4 justify-between items-center flex-wrap">
-            <section className="text-2xl">
-              Home &gt; ダッシュボード
-            </section>
-            <section className="">
-              <button type="button" className="text-white bg-sky-400 hover:bg-sky-500 focus:ring-4 focus:ring-sky-200 font-medium rounded-md text-sm px-5 py-2.5 text-center mr-2 mb-1">カメラを追加</button>
-              <button type="button" className="text-white bg-sky-400 hover:bg-sky-500 focus:ring-4 focus:ring-sky-200 font-medium rounded-md text-sm px-5 py-2.5 text-center mr-2 mb-1 inline-flex items-center">アクション <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button>
-              <DropdownButton id="dropdown-basic-button" title="Dropdown button">
-  <Dropdown.Item href="#/action-1">Action</Dropdown.Item>
-  <Dropdown.Item href="#/action-2">Another action</Dropdown.Item>
-  <Dropdown.Item href="#/action-3">Something else</Dropdown.Item>
-</DropdownButton>
-            </section>
-          </article>
-          <article>
+        <Wrap justify={["center", "space-between"]}>
+          <WrapItem>
+            <Heading mt={5} ml={5} mr={5} size="md" color="gray.700"><Center>ダッシュボード</Center></Heading>
+          </WrapItem >
+          <WrapItem >
+            <QRLinkModalButton/>
+            <Menu>
+              <MenuButton
+                mr={5}
+                mt={2}
+                mb={2}
+                ml={2}
+                as={Button}
+                variant="solid"
+                colorScheme="blue"
+                rightIcon={<ChevronDownIcon />}
+              >
+                アクション 
+              </MenuButton>
+              <MenuList>
+                <MenuItem><LinkIcon/>　リンクを共有</MenuItem>
+                <MenuItem><RepeatIcon/>　サーバーに再接続</MenuItem>
+                <Divider mt={2} mb={2}/>
+                <MenuItem><DeleteIcon/>　ダッシュボードを削除</MenuItem>
+              </MenuList>
+            </Menu>
+          </WrapItem >
+        </Wrap>
+        <Box h="3px" m={2} bg="blue.400"/>
+        <Wrap m={5}>
           <CameraCard/>
-            <video ref={theirRef} width="400px" autoPlay muted playsInline></video>
-            <button onClick={onStartStream}>start</button>
-          </article>
-        </main>
+          <video ref={theirRef} width="400px" autoPlay muted playsInline></video>
+        </Wrap>
       <Footer/>
     </>
   );
