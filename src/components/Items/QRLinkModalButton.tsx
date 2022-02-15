@@ -34,7 +34,7 @@ const QRLinkModalButton = () => {
     <>
       <Button 
         m={2} 
-        colorScheme="blue"
+        colorScheme="teal"
         mr={2}
         mt={2}
         mb={2}
@@ -64,6 +64,9 @@ const QRLinkModalButton = () => {
                 {hasCopied ? 'コピー済み' : 'コピー'}
               </Button>
             </Flex>
+            <Center mt={5}>
+              カメラアプリでQRコードを読み取るか、<br/>リンクにアクセスしてください。
+            </Center>
           </ModalBody>
           <ModalFooter>
           </ModalFooter>

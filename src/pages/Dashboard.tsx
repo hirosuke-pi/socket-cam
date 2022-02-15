@@ -126,6 +126,7 @@ const Dashboard = () => {
         <Box h="3px" m={2} bg="blue.400"/>
         <Wrap m={5}>
           <CameraCard/>
+          <CameraCard/>
           <video ref={theirRef} width="400px" autoPlay muted playsInline></video>
         </Wrap>
       <Footer/>
