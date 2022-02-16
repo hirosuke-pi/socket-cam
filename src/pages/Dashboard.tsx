@@ -42,7 +42,7 @@ type CameraStream = {
 const Dashboard = () => {
   const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY }));
   const params = useParams()
-  const [roomId] = useState<string>(params.dashboardId || '')
+  const [roomId] = useState<string>(params.roomId || '')
   const [remoteVideo, setRemoteVideo] = useState<CameraStream[]>([]);
   const toast = useToast()
 
@@ -87,6 +87,7 @@ const Dashboard = () => {
         toast({
           position: 'bottom',
           title: 'カメラが切断されました。',
+          status: "error",
           description: `ペアID: ${peerId}`,
           duration: 3000,
         })

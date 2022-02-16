@@ -12,8 +12,9 @@ const App = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/camera/:cameraId" element={<Camera />} />
-          <Route path="/dashboard/:dashboardId" element={<Dashboard />} />
+          <Route path="/camera/:roomId" element={<Camera />} />
+          <Route path="/camera/:roomId/:cameraId" element={<Camera />} />
+          <Route path="/dashboard/:roomId" element={<Dashboard />} />
         </Routes>
       </BrowserRouter>
     </ChakraProvider>
