@@ -25,7 +25,7 @@ import { useState, useRef, useEffect } from 'react'
 
 const QRLinkModalButton = () => {
   const params = useParams()
-  const [roomId] = useState<string>(params.dashboardId || '')
+  const [roomId] = useState<string>(params.roomId || '')
   const [cameraUrl] = useState(`${window.location.origin}/camera/${roomId}`)
   const { hasCopied, onCopy } = useClipboard(cameraUrl)
   const { isOpen, onOpen, onClose } = useDisclosure()

@@ -7,7 +7,8 @@ import {
   SmallAddIcon,
   RepeatIcon,
   LinkIcon,
-  DeleteIcon
+  DeleteIcon,
+  CheckIcon
 } from '@chakra-ui/icons'
 
 import {
@@ -27,6 +28,7 @@ import {
   useToast,
   useDisclosure
 } from '@chakra-ui/react'
+import { useNavigate, NavigateFunction } from "react-router-dom";
 
 import Config from '../Config'
 import Header from '../components/Layouts/Header'
@@ -35,13 +37,21 @@ import CameraCard from '../components/Items/CameraCard'
 
 import Peer, {MeshRoom} from 'skyway-js'
 
+type Device = {
+  text: string,
+  id: string,
+}
+
 const Camera = () => {
   const params = useParams()
   const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY }))
   const [roomId] = useState<string>(params.roomId || '')
   const [localStream, setLocalStream] = useState<MediaStream>()
+  const [cameraDevices, setCameraDevices] = useState<Device[]>([])
+  const [cameraIndex, setCameraIndex] = useState<number>(0)
   const toast = useToast()
-
+  const navigate = useNavigate();
+  
   const onStartCamera = (stream: MediaStream) => {
     try {
       const room = peer.current.joinRoom(roomId, {
@@ -50,7 +60,6 @@ const Camera = () => {
       })
 
       room.once('open', () => {
-        toast.closeAll()
         toast({
           position: 'bottom',
           description: "接続しました。",
@@ -61,7 +70,6 @@ const Camera = () => {
 
     } catch (error) {
       console.log(error)
-      toast.closeAll()
       toast({
         position: 'bottom',
         description: "サーバーに接続できませんでした。再度更新して接続してください。",
@@ -77,7 +85,7 @@ const Camera = () => {
     .map((device) => {
       return {
         text: device.label,
-        value: device.deviceId,
+        id: device.deviceId,
       };
     });
   }
@@ -85,20 +93,53 @@ const Camera = () => {
   useEffect(() => {
     getCameraList().then(devices => {
       console.log(devices)
-      const cameraIndex = isNaN(Number(params?.cameraId)) ? 0 : Number(params?.cameraId)
-      navigator.mediaDevices.getUserMedia({ video: {deviceId: devices[cameraIndex].value}, audio: true }).then(localStreamTmp => {
+      if (devices.length <= 0) {
+        toast({
+          position: 'bottom',
+          description: "カメラが見つかりませんでした。",
+          status: "error",
+          duration: 3000,
+        })
+        return
+      }
+
+      const index = isNaN(Number(params?.cameraId)) ? 0 : Number(params?.cameraId)
+      setCameraDevices(devices)
+      setCameraIndex(index)
+
+      if (index < 0) {
+        navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }).then( localStreamTmp => {
+          setLocalStream(() => localStreamTmp)
+          onStartCamera(localStreamTmp)
+        })
+        return
+      } 
+      navigator.mediaDevices.getUserMedia({ video: {deviceId: devices[index].id}, audio: true }).then(localStreamTmp => {
         setLocalStream(() => localStreamTmp)
         onStartCamera(localStreamTmp)
       })
     })
   }, [])
 
+
+  const onNavigate = (index: number) => {
+    setCameraIndex(index)
+    navigate(`/camera/${roomId}/${index}`)
+    window.location.reload();
+  }
+  
+  const getAllCameraElements = () => {
+    return cameraDevices.map((device, index) => {
+      return <MenuItem key={device.id} onClick={() => onNavigate(index)}>{device.text}　{index === cameraIndex ? <CheckIcon/> : ''}</MenuItem>
+    })
+  }
+
   return (
     <>
       <Header/>
         <Wrap justify={["center", "space-between"]} mr={5} ml={5}>
           <WrapItem>
-            <Heading ml={5} mr={5} mt={5} size="md" color="gray.700"><Center>カメラ</Center></Heading>
+            <Heading ml={5} mr={5} mt={5} size="md" color="gray.700"><Center>カメラ - {0 <= cameraIndex ? cameraDevices[cameraIndex]?.text : 'デスクトップ共有'}</Center></Heading>
           </WrapItem >
           <WrapItem >
             <Menu>
@@ -115,10 +156,9 @@ const Camera = () => {
                 カメラ 
               </MenuButton>
               <MenuList>
-                <MenuItem><LinkIcon/>　リンクを共有</MenuItem>
-                <MenuItem><RepeatIcon/>　サーバーに再接続</MenuItem>
+                {getAllCameraElements()}
                 <Divider mt={2} mb={2}/>
-                <MenuItem><DeleteIcon/>　ダッシュボードを削除</MenuItem>
+                <MenuItem onClick={() => onNavigate(-1)}>デスクトップを共有</MenuItem>
               </MenuList>
             </Menu>
             <Menu>
