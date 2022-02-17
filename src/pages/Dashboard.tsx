@@ -3,10 +3,10 @@ import { useState, useRef, useEffect, RefObject } from 'react'
 
 import { 
   ChevronDownIcon,
-  SmallAddIcon,
+  CloseIcon,
   RepeatIcon,
   LinkIcon,
-  DeleteIcon
+  ArrowBackIcon
 } from '@chakra-ui/icons'
 
 import {
@@ -23,8 +23,9 @@ import {
   Divider,
   Center,
   useToast,
-  useDisclosure
+  useClipboard
 } from '@chakra-ui/react'
+import { useNavigate, NavigateFunction } from "react-router-dom";
 
 import Config from '../Config'
 import Header from '../components/Layouts/Header'
@@ -44,6 +45,8 @@ const Dashboard = () => {
   const params = useParams()
   const [roomId] = useState<string>(params.roomId || '')
   const [remoteVideo, setRemoteVideo] = useState<CameraStream[]>([]);
+  const { hasCopied, onCopy } = useClipboard(window.location.href)
+  const navigate = useNavigate();
   const toast = useToast()
 
   const onStartStream = () => {
@@ -127,6 +130,23 @@ const Dashboard = () => {
     });
   };
 
+  const onCopyUrl = () => {
+    onCopy()
+    toast({
+      position: 'bottom',
+      description: 'クリップボードにコピーしました！',
+      status: 'success',
+      duration: 3000,
+    })
+  }
+
+  const onDropout = () => {
+    if (window.confirm('本当に退出しますか？')) {
+      navigate('/')
+      window.location.reload()
+    }
+  }
+
   return (
     <>
       <Header/>
@@ -150,10 +170,10 @@ const Dashboard = () => {
                 アクション 
               </MenuButton>
               <MenuList>
-                <MenuItem><LinkIcon/>　リンクを共有</MenuItem>
-                <MenuItem><RepeatIcon/>　サーバーに再接続</MenuItem>
+                <MenuItem onClick={onCopyUrl}><LinkIcon/>　リンクをコピー</MenuItem>
+                <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　サーバーに再接続</MenuItem>
                 <Divider mt={2} mb={2}/>
-                <MenuItem><DeleteIcon/>　ダッシュボードを削除</MenuItem>
+                <MenuItem onClick={onDropout}><ArrowBackIcon/>　ホームに戻る</MenuItem>
               </MenuList>
             </Menu>
           </WrapItem >

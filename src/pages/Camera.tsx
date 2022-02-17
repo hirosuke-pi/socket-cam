@@ -7,7 +7,7 @@ import {
   SmallAddIcon,
   RepeatIcon,
   LinkIcon,
-  DeleteIcon,
+  ArrowBackIcon,
   CheckIcon
 } from '@chakra-ui/icons'
 
@@ -26,7 +26,7 @@ import {
   Center,
   AspectRatio,
   useToast,
-  useDisclosure
+  useClipboard
 } from '@chakra-ui/react'
 import { useNavigate, NavigateFunction } from "react-router-dom";
 
@@ -49,6 +49,7 @@ const Camera = () => {
   const [localStream, setLocalStream] = useState<MediaStream>()
   const [cameraDevices, setCameraDevices] = useState<Device[]>([])
   const [cameraIndex, setCameraIndex] = useState<number>(0)
+  const { hasCopied, onCopy } = useClipboard(window.location.href)
   const toast = useToast()
   const navigate = useNavigate();
   
@@ -102,22 +103,33 @@ const Camera = () => {
         })
         return
       }
-
+      
+      // カメラデバイスの設定
       const index = isNaN(Number(params?.cameraId)) ? 0 : Number(params?.cameraId)
       setCameraDevices(devices)
       setCameraIndex(index)
 
+      // 画面共有かカメラか
       if (index < 0) {
         navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }).then( localStreamTmp => {
           setLocalStream(() => localStreamTmp)
           onStartCamera(localStreamTmp)
+        }).catch(error => {
+          toast({
+            position: 'bottom',
+            description: "画面が選択されていません。リロードして、選択しなおしてください",
+            status: "error",
+            duration: 5000,
+          })
         })
         return
-      } 
-      navigator.mediaDevices.getUserMedia({ video: {deviceId: devices[index].id}, audio: true }).then(localStreamTmp => {
-        setLocalStream(() => localStreamTmp)
-        onStartCamera(localStreamTmp)
-      })
+      }
+      else {
+        navigator.mediaDevices.getUserMedia({ video: {deviceId: devices[index].id}, audio: true }).then(localStreamTmp => {
+          setLocalStream(() => localStreamTmp)
+          onStartCamera(localStreamTmp)
+        })
+      }
     })
   }, [])
 
@@ -132,6 +144,23 @@ const Camera = () => {
     return cameraDevices.map((device, index) => {
       return <MenuItem key={device.id} onClick={() => onNavigate(index)}>{device.text}　{index === cameraIndex ? <CheckIcon/> : ''}</MenuItem>
     })
+  }
+
+  const onCopyUrl = () => {
+    onCopy()
+    toast({
+      position: 'bottom',
+      description: 'クリップボードにコピーしました！',
+      status: 'success',
+      duration: 3000,
+    })
+  }
+
+  const onDropout = () => {
+    if (window.confirm('本当に退出しますか？')) {
+      navigate('/')
+      window.location.reload()
+    }
   }
 
   return (
@@ -158,7 +187,7 @@ const Camera = () => {
               <MenuList>
                 {getAllCameraElements()}
                 <Divider mt={2} mb={2}/>
-                <MenuItem onClick={() => onNavigate(-1)}>デスクトップを共有</MenuItem>
+                <MenuItem onClick={() => onNavigate(-1)}>画面を共有</MenuItem>
               </MenuList>
             </Menu>
             <Menu>
@@ -175,10 +204,10 @@ const Camera = () => {
                 アクション 
               </MenuButton>
               <MenuList>
-                <MenuItem><LinkIcon/>　リンクを共有</MenuItem>
-                <MenuItem><RepeatIcon/>　サーバーに再接続</MenuItem>
+                <MenuItem onClick={onCopyUrl}><LinkIcon/>　リンクを共有</MenuItem>
+                <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　サーバーに再接続</MenuItem>
                 <Divider mt={2} mb={2}/>
-                <MenuItem><DeleteIcon/>　ダッシュボードを削除</MenuItem>
+                <MenuItem onClick={onDropout}><ArrowBackIcon/>　ホームに戻る</MenuItem>
               </MenuList>
             </Menu>
           </WrapItem >

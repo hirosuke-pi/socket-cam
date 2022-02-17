@@ -18,6 +18,7 @@ type CameraStream = {
 };
 
 const CameraCard = (props: { video: CameraStream}) => {
+  console.log(props.video)
   return (
     <Center py={6}>
       <Box
@@ -36,14 +37,8 @@ const CameraCard = (props: { video: CameraStream}) => {
           <ReactPlayer url={props.video.stream} playing muted controls={true} width='420'/>
         </Box>
         <Stack>
-          <Heading
-            color={useColorModeValue('gray.700', 'white')}
-            fontSize={'2xl'}
-            fontFamily={'body'}>
-            カメラタイトル
-          </Heading>
           <Text color={'gray.500'}>
-            ssss
+            ペアID: {props.video.peerId}
           </Text>
         </Stack>
       </Box>

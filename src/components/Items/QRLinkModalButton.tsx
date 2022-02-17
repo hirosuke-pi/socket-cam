@@ -17,6 +17,9 @@ import {
 
 import { 
   SmallAddIcon,
+  CopyIcon,
+  CheckIcon
+
 } from '@chakra-ui/icons'
 
 import QRCode from "react-qr-code"
@@ -61,7 +64,7 @@ const QRLinkModalButton = () => {
             <Flex mt={5}>
               <Input value={cameraUrl} isReadOnly width="100%"/>
               <Button onClick={onCopy} ml={2}>
-                {hasCopied ? 'コピー済み' : 'コピー'}
+                {hasCopied ? <CheckIcon/> : <CopyIcon/>}
               </Button>
             </Flex>
             <Center mt={5}>
