@@ -94,7 +94,13 @@ const Camera = () => {
   useEffect(() => {
     getCameraList().then(devices => {
       console.log(devices)
-      if (devices.length <= 0) {
+      
+      // カメラデバイスの設定
+      const index = isNaN(Number(params?.cameraId)) ? 0 : Number(params?.cameraId)
+      setCameraDevices(devices)
+      setCameraIndex(index)
+
+      if (devices.length <= 0 || devices.length <= index) {
         toast({
           position: 'bottom',
           description: "カメラが見つかりませんでした。",
@@ -103,11 +109,6 @@ const Camera = () => {
         })
         return
       }
-      
-      // カメラデバイスの設定
-      const index = isNaN(Number(params?.cameraId)) ? 0 : Number(params?.cameraId)
-      setCameraDevices(devices)
-      setCameraIndex(index)
 
       // 画面共有かカメラか
       if (index < 0) {

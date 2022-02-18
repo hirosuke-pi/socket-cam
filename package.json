@@ -20,6 +20,7 @@
     "@types/react-router-dom": "^5.3.3",
     "crypto": "^1.0.1",
     "framer-motion": "6",
+    "gh-pages": "^3.2.3",
     "react": "^17.0.2",
     "react-bootstrap": "^2.1.2",
     "react-dom": "^17.0.2",
@@ -36,8 +37,10 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "gh-pages -d build"
   },
+  "homepage": "https://socket-cam.net",
   "eslintConfig": {
     "extends": [
       "react-app",
