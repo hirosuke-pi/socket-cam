@@ -1,4 +1,3 @@
-import { useParams } from 'react-router-dom'
 import { useState, useRef, useEffect, RefObject } from 'react'
 
 import { 
@@ -23,7 +22,10 @@ import {
   Divider,
   Center,
   useToast,
-  useClipboard
+  useClipboard,
+  Editable,
+  EditablePreview,
+  EditableInput
 } from '@chakra-ui/react'
 import { useNavigate, NavigateFunction } from "react-router-dom";
 
@@ -42,14 +44,13 @@ type CameraStream = {
 
 const Dashboard = () => {
   const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY }));
-  const params = useParams()
-  const [roomId] = useState<string>(params.roomId || '')
+  const [dashboardName, setDashboardName] = useState<string>(localStorage.getItem(Config().DASHBOARD_NAME) ?? 'ダッシュボード名')
   const [remoteVideo, setRemoteVideo] = useState<CameraStream[]>([]);
   const { hasCopied, onCopy } = useClipboard(window.location.href)
   const navigate = useNavigate();
   const toast = useToast()
 
-  const onStartStream = () => {
+  const onStartStream = (roomId: string) => {
     try {
       const room = peer.current.joinRoom(roomId, {
         mode: 'mesh'
@@ -115,14 +116,21 @@ const Dashboard = () => {
   }
 
   useEffect(() => {
-    setTimeout(onStartStream, 1000)
-
     toast({
       position: 'bottom',
       description: "サーバーに接続しています...",
       duration: null,
     })
+
+    const room = localStorage.getItem(Config().DASHBOARD_ID)
+    if (room == null || room.length < 1) {
+      window.location.href = '/'
+      return
+    }
+
+    setTimeout(() => onStartStream(room), 1000)
   }, [])
+
 
   const showCamera = () => {
     return remoteVideo.map((video) => {
@@ -141,9 +149,8 @@ const Dashboard = () => {
   }
 
   const onDropout = () => {
-    if (window.confirm('本当に退出しますか？')) {
-      navigate('/')
-      window.location.reload()
+    if (window.confirm('本当にダッシュボードから退出しますか？')) {
+      window.location.href = '/'
     }
   }
 
@@ -152,7 +159,12 @@ const Dashboard = () => {
       <Header/>
         <Wrap justify={["center", "space-between"]} mr={5} ml={5}>
           <WrapItem>
-            <Heading ml={5} mr={5} mt={5} size="md" color="gray.700"><Center>ダッシュボード</Center></Heading>
+            <Heading ml={5} mr={5} mt={3} size="md" color="gray.700">
+              <Editable defaultValue={dashboardName} onSubmit={(name) => localStorage.setItem(Config().DASHBOARD_NAME, name)}>
+                <EditablePreview />
+                <EditableInput/>
+              </Editable>
+            </Heading>
           </WrapItem >
           <WrapItem >
             <QRLinkModalButton/>
@@ -182,6 +194,7 @@ const Dashboard = () => {
         <Wrap m={5}>
           {showCamera()}
         </Wrap>
+        
       <Footer/>
     </>
   );

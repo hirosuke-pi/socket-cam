@@ -25,11 +25,10 @@ import {
 import QRCode from "react-qr-code"
 import { useParams } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
+import Config from '../../Config'
 
 const QRLinkModalButton = () => {
-  const params = useParams()
-  const [roomId] = useState<string>(params.roomId || '')
-  const [cameraUrl] = useState(`${window.location.origin}/camera/${roomId}`)
+  const [cameraUrl] = useState(`${window.location.origin}/room/${localStorage.getItem(Config().DASHBOARD_ID) ?? ''}/camera`)
   const { hasCopied, onCopy } = useClipboard(cameraUrl)
   const { isOpen, onOpen, onClose } = useDisclosure()
 

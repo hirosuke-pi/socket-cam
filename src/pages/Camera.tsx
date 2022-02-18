@@ -42,13 +42,14 @@ type Device = {
   id: string,
 }
 
-const Camera = () => {
+const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
   const params = useParams()
   const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY }))
   const [roomId] = useState<string>(params.roomId || '')
   const [localStream, setLocalStream] = useState<MediaStream>()
   const [cameraDevices, setCameraDevices] = useState<Device[]>([])
   const [cameraIndex, setCameraIndex] = useState<number>(0)
+  const [isSmartPhone] = useState<boolean>(/iPhone|Android.+Mobile/.test(navigator.userAgent))
   const { hasCopied, onCopy } = useClipboard(window.location.href)
   const toast = useToast()
   const navigate = useNavigate();
@@ -93,12 +94,19 @@ const Camera = () => {
 
   useEffect(() => {
     getCameraList().then(devices => {
-      console.log(devices)
-      
       // カメラデバイスの設定
       const index = isNaN(Number(params?.cameraId)) ? 0 : Number(params?.cameraId)
-      setCameraDevices(devices)
       setCameraIndex(index)
+
+      // スマホ判定
+      if (isSmartPhone) {
+        devices = [
+          {text: 'バックカメラ', id: 'environment'},
+          {text: 'フロントカメラ', id: 'user'}
+        ]
+      }
+      console.log(devices)
+      setCameraDevices(devices)
 
       if (devices.length <= 0 || devices.length <= index) {
         toast({
@@ -111,7 +119,15 @@ const Camera = () => {
       }
 
       // 画面共有かカメラか
-      if (index < 0) {
+      console.log(isCamera)
+      if (isCamera) {
+        navigator.mediaDevices.getUserMedia({ video: isSmartPhone ? { facingMode: devices[index].id } : {deviceId: devices[index].id}, audio: true }).then(localStreamTmp => {
+          console.log('dasssssssssssss', localStreamTmp)
+          setLocalStream(() => localStreamTmp)
+          onStartCamera(localStreamTmp)
+        })
+      }
+      else {
         navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }).then( localStreamTmp => {
           setLocalStream(() => localStreamTmp)
           onStartCamera(localStreamTmp)
@@ -123,27 +139,13 @@ const Camera = () => {
             duration: 5000,
           })
         })
-        return
-      }
-      else {
-        navigator.mediaDevices.getUserMedia({ video: {deviceId: devices[index].id}, audio: true }).then(localStreamTmp => {
-          setLocalStream(() => localStreamTmp)
-          onStartCamera(localStreamTmp)
-        })
       }
     })
   }, [])
-
-
-  const onNavigate = (index: number) => {
-    setCameraIndex(index)
-    navigate(`/camera/${roomId}/${index}`)
-    window.location.reload();
-  }
   
   const getAllCameraElements = () => {
     return cameraDevices.map((device, index) => {
-      return <MenuItem key={device.id} onClick={() => onNavigate(index)}>{device.text}　{index === cameraIndex ? <CheckIcon/> : ''}</MenuItem>
+      return <MenuItem key={device.id} onClick={() => window.location.href = `/room/${roomId}/camera/${index}`}>{device.text}　{(index === cameraIndex && isCamera) ? <CheckIcon/> : ''}</MenuItem>
     })
   }
 
@@ -158,9 +160,8 @@ const Camera = () => {
   }
 
   const onDropout = () => {
-    if (window.confirm('本当に退出しますか？')) {
-      navigate('/')
-      window.location.reload()
+    if (window.confirm('本当に監視カメラを終了しますか？')) {
+      window.location.href = '/'
     }
   }
 
@@ -169,7 +170,7 @@ const Camera = () => {
       <Header/>
         <Wrap justify={["center", "space-between"]} mr={5} ml={5}>
           <WrapItem>
-            <Heading ml={5} mr={5} mt={5} size="md" color="gray.700"><Center>カメラ - {0 <= cameraIndex ? cameraDevices[cameraIndex]?.text : 'デスクトップ共有'}</Center></Heading>
+            <Heading ml={5} mr={5} mt={5} size="md" color="gray.700"><Center>{isCamera ? `カメラ - ${cameraDevices[cameraIndex]?.text}` : '画面共有'}</Center></Heading>
           </WrapItem >
           <WrapItem >
             <Menu>
@@ -188,7 +189,7 @@ const Camera = () => {
               <MenuList>
                 {getAllCameraElements()}
                 <Divider mt={2} mb={2}/>
-                <MenuItem onClick={() => onNavigate(-1)}>画面を共有</MenuItem>
+                <MenuItem isDisabled={isSmartPhone} onClick={() => window.location.href = `/room/${roomId}/display`}>画面を共有　{isCamera ? '' : <CheckIcon/>}</MenuItem>
               </MenuList>
             </Menu>
             <Menu>
