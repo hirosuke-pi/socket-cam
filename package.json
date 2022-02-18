@@ -3,18 +3,33 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@chakra-ui/icons": "^1.1.5",
+    "@chakra-ui/react": "^1.8.3",
+    "@craco/craco": "^6.4.3",
+    "@emotion/react": "11",
+    "@emotion/styled": "11",
     "@testing-library/jest-dom": "^5.16.1",
     "@testing-library/react": "^12.1.2",
     "@testing-library/user-event": "^13.5.0",
+    "@types/bootstrap": "^5.1.9",
     "@types/jest": "^27.4.0",
     "@types/node": "^16.11.21",
     "@types/react": "^17.0.38",
+    "@types/react-bootstrap": "^0.32.29",
     "@types/react-dom": "^17.0.11",
     "@types/react-router-dom": "^5.3.3",
+    "crypto": "^1.0.1",
+    "framer-motion": "6",
+    "gh-pages": "^3.2.3",
     "react": "^17.0.2",
+    "react-bootstrap": "^2.1.2",
     "react-dom": "^17.0.2",
+    "react-player": "^2.9.0",
+    "react-qr-code": "^2.0.3",
     "react-router-dom": "^6.2.1",
     "react-scripts": "5.0.0",
+    "skyway-js": "^4.4.3",
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat",
     "typescript": "^4.5.5",
     "web-vitals": "^2.1.4"
   },
@@ -22,8 +37,10 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "gh-pages -d build"
   },
+  "homepage": "https://socket-cam.net",
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -41,5 +58,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "autoprefixer": "9",
+    "postcss": "7"
   }
 }
