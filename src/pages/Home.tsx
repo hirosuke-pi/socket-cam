@@ -6,14 +6,6 @@ import Header from '../components/Layouts/Header'
 import Footer from '../components/Layouts/Footer'
 import Logo from '../assets/images/logo.svg'
 
-const generateRoomId = (): string => {
-  const S = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  const N = 32
-  const roomId = Array.from(crypto.getRandomValues(new Uint8Array(N))).map((n:number)=>S[n%S.length]).join('')
-  console.log(roomId)
-
-  return roomId
-}
 
 const Home = () => {
   const [dashboardRoomId, setDashboardRoomId] = useState<string>()
@@ -30,6 +22,15 @@ const Home = () => {
 
     setDashboardRoomId(roomId)
   }, [])
+
+  const generateRoomId = (): string => {
+    const S = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    const N = 32
+    const roomId = Array.from(crypto.getRandomValues(new Uint8Array(N))).map((n:number)=>S[n%S.length]).join('')
+    console.log(roomId)
+  
+    return roomId
+  }
 
   return (
     <>

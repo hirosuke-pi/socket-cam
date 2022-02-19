@@ -16,4 +16,17 @@ const Config = () => {
   }
 }
 
+export type CameraStream = {
+  stream: MediaStream;
+  peerId: string;
+  config: {
+    userAgent: string
+    cameraIndex: number
+    cameraDevices: [{
+      text: string
+      id: string
+    }]
+  } | null
+};
+
 export default Config

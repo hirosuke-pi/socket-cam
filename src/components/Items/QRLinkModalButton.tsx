@@ -12,9 +12,10 @@ import {
   Flex,
   Input,
   useClipboard,
-  VStack
+  Icon
 } from '@chakra-ui/react'
 
+import { RiVideoAddFill } from 'react-icons/ri'
 import { 
   SmallAddIcon,
   CopyIcon,
@@ -37,11 +38,9 @@ const QRLinkModalButton = () => {
       <Button 
         m={2} 
         colorScheme="teal"
-        mr={2}
         mt={2}
         mb={2}
-        ml={5}
-        rightIcon={<SmallAddIcon />}
+        rightIcon={<RiVideoAddFill/>}
         onClick={onOpen}
       >
         カメラ追加

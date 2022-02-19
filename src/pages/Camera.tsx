@@ -7,7 +7,7 @@ import {
   SmallAddIcon,
   RepeatIcon,
   LinkIcon,
-  ArrowBackIcon,
+  CloseIcon,
   CheckIcon
 } from '@chakra-ui/icons'
 
@@ -49,13 +49,14 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
   const [localStream, setLocalStream] = useState<MediaStream>()
   const [cameraDevices, setCameraDevices] = useState<Device[]>([])
   const [cameraIndex, setCameraIndex] = useState<number>(0)
-  const [isSmartPhone] = useState<boolean>(/iPhone|Android.+Mobile/.test(navigator.userAgent))
+  const [isSmartPhone] = useState<boolean>(/iPhone|Android|iPad/.test(navigator.userAgent))
   const { hasCopied, onCopy } = useClipboard(window.location.href)
   const toast = useToast()
-  const navigate = useNavigate();
   
-  const onStartCamera = (stream: MediaStream) => {
+  
+  const onStartCamera = (stream: MediaStream, index: number, devices: Device[]) => {
     try {
+      let globalRoomId = ''
       const room = peer.current.joinRoom(roomId, {
         mode: 'mesh',
         stream: stream
@@ -70,14 +71,42 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
         })
       });
 
+      room.on('data', async ({data, src}) => {
+        console.log(!data?.cmd || (data?.peerId !== peer.current.id && !data?.broadcast))
+        if (!data?.cmd || (data?.peerId !== peer.current.id && !data?.broadcast)) return
+
+        if (data.cmd === 'getUserAgent') {
+          room.send({
+            cmd: data.cmd,
+            status: 'success',
+            peerId: src,
+            data: {
+              userAgent: window.navigator.userAgent,
+              cameraIndex: index,
+              cameraDevices: devices
+            }
+          })
+        }
+        else if (data.cmd === 'changeCamera') {
+          window.location.replace(`/room/${roomId}/camera/${data.data.cameraIndex}`)
+        }
+        else if (data.cmd === 'removeCamera') {
+          window.location.replace('/');
+        }
+      })
+
     } catch (error) {
       console.log(error)
       toast({
         position: 'bottom',
-        description: "サーバーに接続できませんでした。再度更新して接続してください。",
+        description: "サーバーに接続できませんでした。5秒後に再接続します...",
         status: "error",
         duration: 3000,
       })
+
+      setTimeout(() => {
+        onStartCamera(stream, index, devices)
+      }, 5000)
     }
   }
 
@@ -88,7 +117,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
       return {
         text: device.label,
         id: device.deviceId,
-      };
+      } as Device;
     });
   }
 
@@ -119,18 +148,16 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
       }
 
       // 画面共有かカメラか
-      console.log(isCamera)
       if (isCamera) {
         navigator.mediaDevices.getUserMedia({ video: isSmartPhone ? { facingMode: devices[index].id } : {deviceId: devices[index].id}, audio: true }).then(localStreamTmp => {
-          console.log('dasssssssssssss', localStreamTmp)
           setLocalStream(() => localStreamTmp)
-          onStartCamera(localStreamTmp)
+          onStartCamera(localStreamTmp, index, devices)
         })
       }
       else {
         navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }).then( localStreamTmp => {
           setLocalStream(() => localStreamTmp)
-          onStartCamera(localStreamTmp)
+          onStartCamera(localStreamTmp, -1, devices)
         }).catch(error => {
           toast({
             position: 'bottom',
@@ -209,7 +236,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
                 <MenuItem onClick={onCopyUrl}><LinkIcon/>　リンクを共有</MenuItem>
                 <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　サーバーに再接続</MenuItem>
                 <Divider mt={2} mb={2}/>
-                <MenuItem onClick={onDropout}><ArrowBackIcon/>　ホームに戻る</MenuItem>
+                <MenuItem onClick={onDropout}><CloseIcon/>　カメラを切断</MenuItem>
               </MenuList>
             </Menu>
           </WrapItem >
