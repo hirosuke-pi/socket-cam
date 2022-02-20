@@ -15,7 +15,6 @@ import {
   Icon
 } from '@chakra-ui/react'
 
-import { RiVideoAddFill } from 'react-icons/ri'
 import { 
   SmallAddIcon,
   CopyIcon,
@@ -28,23 +27,17 @@ import { useParams } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
 import Config from '../../Config'
 
-const QRLinkModalButton = () => {
-  const [cameraUrl] = useState(`${window.location.origin}/room/${localStorage.getItem(Config().DASHBOARD_ID) ?? ''}/camera`)
-  const { hasCopied, onCopy } = useClipboard(cameraUrl)
+const QRLinkModalButton = (props: {buttonElement: Function, title: string, url: string}) => {
+  const { hasCopied, onCopy } = useClipboard(props.url)
   const { isOpen, onOpen, onClose } = useDisclosure()
+
+  const generateButtonElement = (onOpenEvent: React.MouseEventHandler<HTMLButtonElement>) => {
+    return props.buttonElement(onOpenEvent)
+  }
 
   return (
     <>
-      <Button 
-        m={2} 
-        colorScheme="teal"
-        mt={2}
-        mb={2}
-        rightIcon={<RiVideoAddFill/>}
-        onClick={onOpen}
-      >
-        カメラ追加
-      </Button>
+      {generateButtonElement(onOpen)}
       <Modal
         isCentered
         onClose={onClose}
@@ -53,14 +46,14 @@ const QRLinkModalButton = () => {
       >
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader><Center>監視カメラを追加</Center></ModalHeader>
+          <ModalHeader><Center>{props.title}</Center></ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Center>
-              <QRCode value={cameraUrl} />
+              <QRCode value={props.url} />
             </Center>
             <Flex mt={5}>
-              <Input value={cameraUrl} isReadOnly width="100%"/>
+              <Input value={props.url} isReadOnly width="100%"/>
               <Button onClick={onCopy} ml={2}>
                 {hasCopied ? <CheckIcon/> : <CopyIcon/>}
               </Button>

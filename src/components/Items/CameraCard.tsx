@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, RefObject } from 'react'
 
 import { BiScreenshot } from 'react-icons/bi'
+import { MdVideoCameraBack } from 'react-icons/md'
 import { 
   ChevronDownIcon,
   CloseIcon,
@@ -40,9 +41,8 @@ import {
 } from '@chakra-ui/react'
 import ReactPlayer from 'react-player'
 import { MeshRoom } from 'skyway-js'
-
-import Config, {CameraStream} from '../../Config'
-
+import Config, {CameraStream, getDateTime} from '../../Config'
+const platform = require('platform')
 
 const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) => {
   const [videoRef, setVideoRef] = useState<any>()
@@ -50,12 +50,10 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
   const [screenshotFilename, setScreenshotFilename] = useState<string>('')
   const { isOpen, onOpen, onClose } = useDisclosure()
 
-  console.log(props.video?.config?.cameraDevices)
-  const cameraName = props.video?.config?.cameraDevices[props.video?.config?.cameraIndex]?.text ?? '画面共有'
 
   const getAllCameraElements = () => {
-    return props.video?.config?.cameraDevices.map((device, index) => {
-      return <MenuItem key={device.id} onClick={() => changeCamera(index)}>{device.text}　{(index === props.video?.config?.cameraIndex) ? <CheckIcon/> : ''}</MenuItem>
+    return props.video?.camera?.devices.map((device, index) => {
+      return <MenuItem key={device.id} onClick={() => changeCamera(index)}>{device.text}　{(index === props.video?.camera?.index) ? <CheckIcon/> : ''}</MenuItem>
     })
   }
 
@@ -79,19 +77,8 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
     }
   }
 
-  const getDateTime = () => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const MM = ('0' + (d.getMonth() + 1)).slice(-2);
-    const dd = ('0' + d.getDate()).slice(-2);
-    const hh = ('0' + d.getHours()).slice(-2);
-    const mm = ('0' + d.getMinutes()).slice(-2);
-    const ss = ('0' + d.getSeconds()).slice(-2);
-    return yyyy + '-' + MM + '-' + dd + '_' + hh + '-' + mm + '-' + ss;
-}
-
   const onScreenshot = () => {
-    setScreenshotFilename(cameraName +'_'+ getDateTime() +'.png')
+    setScreenshotFilename(props.video?.config?.name +'_'+ getDateTime() +'.png')
     onOpen()
 
     const videoElement = videoRef.getInternalPlayer()
@@ -119,6 +106,10 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
     setScreenshotFilename('')
   }
 
+  const getUserInfo = () => {
+    return platform.parse(props.video.config?.userAgent)?.description ?? props.video.config?.userAgent
+  }
+
   return (
     <Center py={6}>
       <Box
@@ -138,10 +129,10 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
         </Box>
         <Stack>
           <Heading size="md" color="gray.700">
-            {(props.video?.config?.cameraIndex ?? -1 < 0) ? cameraName : `カメラ - ${cameraName}`}
+            <Icon mb={1} as={MdVideoCameraBack}/> {(props.video?.camera?.index ?? -1 < 0) ? props.video?.config?.name : `カメラ - ${props.video?.config?.name}`}
           </Heading>
           <Text color={'gray.500'}>
-            {props.video.config?.userAgent}
+            {getUserInfo()}
           </Text>
           <Box mt={5}>
             <Wrap justify={["center", "right"]} mt={5}>
