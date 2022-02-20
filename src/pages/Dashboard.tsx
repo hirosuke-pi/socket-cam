@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, RefObject } from 'react'
 
-import { RiVideoAddLine } from 'react-icons/ri'
+import { GiSpeaker } from 'react-icons/gi'
 import { 
   ChevronDownIcon,
   CloseIcon,
@@ -62,12 +62,7 @@ const Dashboard = () => {
 
       room.once('open', () => {
         toast.closeAll()
-        toast({
-          position: 'bottom',
-          description: "接続しました。",
-          status: "success",
-          duration: 3000,
-        })
+        onToastShow('ルームに接続しました。', null)
 
         setJoinedDate(getDateTime(false))
         room.send({
@@ -79,14 +74,6 @@ const Dashboard = () => {
 
       room.on('peerJoin', peerId => {
         console.log(peerId)
-        toast.closeAll()
-        toast({
-          position: 'bottom',
-          title: 'カメラが追加されました。',
-          description: `ペアID: ${peerId}`,
-          status: 'success',
-          duration: 3000,
-        })
 
         room.send({
           cmd: 'getDashboardConfig',
@@ -100,23 +87,18 @@ const Dashboard = () => {
           return prev.filter((video) => {
             if (video.peerId === peerId) {
               video.stream.getTracks().forEach((track) => track.stop());
+              onToastShow(`${video?.config?.name}`, 'カメラが切断されました。', true)
             }
             return video.peerId !== peerId
           })
         })
         setRemoteDashboard((prev) => {
-          return prev.filter((data) => {
-            console.log(data)
-            return data.peerId !== peerId
+          return prev.filter((dashboard) => {
+            if (dashboard.peerId === peerId) {
+              onToastShow(`${dashboard?.config?.name}`, 'ダッシュボードが切断されました。', true)
+            }
+            return dashboard.peerId !== peerId
           })
-        })
-
-        toast({
-          position: 'bottom',
-          title: 'カメラが切断されました。',
-          status: "error",
-          description: `ペアID: ${peerId}`,
-          duration: 3000,
         })
       })
 
@@ -145,6 +127,7 @@ const Dashboard = () => {
             }
             return videoData
           }))
+          onToastShow(`${data.data.config.name}`, 'カメラが接続されました。')
         }
         if (data.cmd === 'setDashboardName') {
           setRemoteDashboard(prev => prev.map(dashboard => {
@@ -164,6 +147,7 @@ const Dashboard = () => {
             }
             return prev
           })
+          onToastShow(`${data.data.config.name}`, 'ダッシュボードが接続されました。')
         }
         else if (data.cmd === 'getDashboardConfig') {
           room.send({
@@ -188,19 +172,18 @@ const Dashboard = () => {
     } catch (error) {
       console.log(error)
       toast.closeAll()
-      toast({
-        position: 'bottom',
-        description: "サーバーに接続できませんでした。再度更新して接続してください。",
-        status: "error",
-        duration: 3000,
-      })
+      onToastShow('ルームに接続できませんでした。5秒後に再接続します...', null, true)
+
+      setTimeout(() => {
+        window.location.reload()
+      }, 5000)
     }
   }
 
   useEffect(() => {
     toast({
       position: 'bottom',
-      description: (<><Spinner size='xs' /> サーバーに接続中... </>),
+      description: (<><Spinner size='xs' /> ルームに接続中... </>),
       duration: null,
     })
 
@@ -212,6 +195,16 @@ const Dashboard = () => {
 
     setTimeout(() => onStartStream(room), 1000)
   }, [])
+
+  const onToastShow = (description: string, title: string|null = null,  isError: boolean = false) => {
+    toast({
+      position: 'bottom',
+      title: title,
+      description: description,
+      status: isError ? 'error' : 'success',
+      duration: 3000,
+    })
+  }
 
 
   const onSetDashboardName = (name: string) => {
@@ -277,6 +270,16 @@ const Dashboard = () => {
     )
   }
 
+  const onSoundBroadCast = () => {
+    if (window.confirm('本当に全てのカメラに対して音を鳴らしますか？')) {
+      meshRoom?.send({
+        cmd: 'soundBeep',
+        broadcast: true,
+        data: {}
+      })
+    }
+  }
+
   return (
     <>
       <Header/>
@@ -314,6 +317,7 @@ const Dashboard = () => {
                     title='ダッシュボードを共有' 
                     url={`${window.location.href}/${localStorage.getItem(Config().DASHBOARD_ID) ?? ''}`}
                   />
+                  <MenuItem onClick={onSoundBroadCast}><GiSpeaker/>　全体に音を鳴らす</MenuItem>
                   <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　サーバーに再接続</MenuItem>
                   <Divider mt={2} mb={2}/>
                   <MenuItem onClick={onRemoveAllCamera}><DeleteIcon/>　ダッシュボードを削除</MenuItem>
