@@ -148,7 +148,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
       console.log(devices)
       setCameraDevices(devices)
 
-      if (devices.length <= 0 || devices.length <= index) {
+      if (isCamera && (devices.length <= 0 || devices.length <= index)) {
         toast({
           position: 'bottom',
           description: "カメラが見つかりませんでした。",
@@ -208,7 +208,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
       <Header/>
         <Wrap justify={["center", "space-between"]} mr={5} ml={5}>
           <WrapItem>
-            <Heading ml={5} mr={5} mt={5} size="md" color="gray.700"><Center>{isCamera ? `カメラ - ${cameraDevices[cameraIndex]?.text}` : '画面共有'}</Center></Heading>
+            <Heading ml={5} mr={5} mt={5} size="md" color="gray.700"><Center>{isCamera ? `カメラ - ${cameraDevices[cameraIndex]?.text ?? 'なし'}` : '画面共有'}</Center></Heading>
           </WrapItem >
           <WrapItem >
             <Menu>

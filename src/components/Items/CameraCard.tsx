@@ -199,6 +199,7 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
         onClose={onClose}
         isOpen={isOpen}
         motionPreset='slideInBottom'
+        size='xl'
       >
         <ModalOverlay />
         <ModalContent>
