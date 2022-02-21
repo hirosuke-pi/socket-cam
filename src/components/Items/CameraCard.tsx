@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, RefObject } from 'react'
 
-import { BiScreenshot, BiZoomIn, BiZoomOut } from 'react-icons/bi'
+import { BiScreenshot, BiZoomIn, BiZoomOut, BiImages } from 'react-icons/bi'
 import { GiSpeaker } from 'react-icons/gi'
-import { MdVideoCameraBack } from 'react-icons/md'
+import { MdVideoCameraBack, MdPeopleAlt } from 'react-icons/md'
 import { 
   ChevronDownIcon,
   CloseIcon,
@@ -38,17 +38,22 @@ import {
   ModalCloseButton,
   ModalBody,
   ModalFooter,
-  useDisclosure 
+  useDisclosure,
+  FormControl,
+  FormLabel,
+  Switch
 } from '@chakra-ui/react'
 import ReactPlayer from 'react-player'
 import { MeshRoom } from 'skyway-js'
 import Config, {CameraStream, getDateTime} from '../../Config'
+import DrawerImageButton from './DrawerImageButton'
 const platform = require('platform')
 
-const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) => {
+const CameraCard = (props: { video: CameraStream, setRemoteVideo: Function, room: MeshRoom | undefined }) => {
   const [videoRef, setVideoRef] = useState<any>()
   const [screenshot, setScreenshot] = useState<string>('')
   const [screenshotFilename, setScreenshotFilename] = useState<string>('')
+  const [isMotionEnable, setIsMotionEnable] = useState<boolean>(false)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [isCameraZoom, setCameraZoom] = useState<boolean>(false)
   console.log(props.video.stream)
@@ -128,6 +133,16 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
     )
   }
 
+  const onChangedMotion = (isChecked: boolean ) => {
+    setIsMotionEnable(isChecked)
+    if (isChecked) {
+
+    }
+    else {
+
+    }
+  }
+
   return (
     <Center py={6}>
       <Box
@@ -147,11 +162,18 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
         </Box>
         <Stack>
           <Heading size="md" color="gray.700">
-            <Icon mb={1} as={MdVideoCameraBack}/> {(props.video?.camera?.index ?? -1 < 0) ? props.video?.config?.name : `カメラ - ${props.video?.config?.name}`}
+            <Icon as={MdVideoCameraBack}/> {(props.video?.camera?.index ?? -1 < 0) ? props.video?.config?.name : `カメラ - ${props.video?.config?.name}`}
           </Heading>
           <Text color={'gray.500'}>
             {getUserInfo()}
           </Text>
+          <Divider/>
+          <FormControl display='flex' alignItems='center' pt={3}>
+            <FormLabel  htmlFor='motion' mb='0'>
+              <Icon as={MdPeopleAlt}/> モーション・人検知
+            </FormLabel>
+            <Switch id='motion' onChange={(event) => onChangedMotion(event.target.checked)}/>
+          </FormControl>
           <Box mt={5}>
             <Wrap justify={["center", "right"]} mt={5}>
               <WrapItem w={['100%', '140px']}>
@@ -182,9 +204,10 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
                     アクション 
                   </MenuButton>
                   <MenuList>
-                    {createCameraZoomElement()}
-                    <MenuItem onClick={onSoundCamera}><GiSpeaker/>　音を鳴らす</MenuItem>
+                    <DrawerImageButton isDisabled={isMotionEnable} remoteVideo={props.video.images}/>
                     <MenuItem onClick={onScreenshot}><BiScreenshot/>　スクリーンショット</MenuItem>
+                    <MenuItem onClick={onSoundCamera}><GiSpeaker/>　音を鳴らす</MenuItem>
+                    {createCameraZoomElement()}
                     <Divider mt={2} mb={2}/>
                     <MenuItem onClick={onRemoveCamera}><CloseIcon/>　カメラを削除</MenuItem>
                   </MenuList>

@@ -10,6 +10,7 @@ import {
   CloseIcon,
   CheckIcon
 } from '@chakra-ui/icons'
+import { MdVideoCameraBack, MdSpaceDashboard } from 'react-icons/md'
 
 import {
   Menu,
@@ -34,6 +35,7 @@ import Header from '../components/Layouts/Header'
 import Footer from '../components/Layouts/Footer'
 import SoundChime from '../assets/audio/Chime.mp3'
 
+import QRLinkModalButton from '../components/Items/QRLinkModalButton'
 import Peer, {MeshRoom} from 'skyway-js'
 
 type Device = {
@@ -50,8 +52,6 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
   const [cameraDevices, setCameraDevices] = useState<Device[]>([])
   const [cameraIndex, setCameraIndex] = useState<number>(0)
   const [isSmartPhone] = useState<boolean>(/iPhone|Android|iPad/.test(navigator.userAgent))
-  const { hasCopied, onCopy } = useClipboard(window.location.href)
-  const [SoundStatus, setSoundStatus] = useState('STOPPED');
   const toast = useToast()
   
   
@@ -185,16 +185,6 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
     })
   }
 
-  const onCopyUrl = () => {
-    onCopy()
-    toast({
-      position: 'bottom',
-      description: 'クリップボードにコピーしました！',
-      status: 'success',
-      duration: 3000,
-    })
-  }
-
   const onDropout = () => {
     if (window.confirm('本当に監視カメラを終了しますか？')) {
       window.location.href = '/'
@@ -242,7 +232,15 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
                 アクション 
               </MenuButton>
               <MenuList>
-                <MenuItem onClick={onCopyUrl}><LinkIcon/>　リンクを共有</MenuItem>
+                <QRLinkModalButton 
+                  buttonElement={(onOpen: React.MouseEventHandler<HTMLButtonElement>) => {
+                    return (
+                      <MenuItem onClick={onOpen}><LinkIcon/>　カメラを増やす</MenuItem>
+                    )
+                  }} 
+                  title='カメラを増やす' 
+                  url={`${window.location.origin}/room/${params?.roomId ?? ''}/camera`}
+                />
                 <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　サーバーに再接続</MenuItem>
                 <Divider mt={2} mb={2}/>
                 <MenuItem onClick={onDropout}><CloseIcon/>　カメラを切断</MenuItem>

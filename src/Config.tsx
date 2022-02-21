@@ -46,6 +46,7 @@ export type CameraStream = {
       id: string
     }]
   } | null
+  images: string[]
 };
 
 export type DashboardConfig = {

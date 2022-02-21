@@ -1,11 +1,4 @@
-import { 
-  ChevronDownIcon,
-  CloseIcon,
-  CheckIcon,
-  DownloadIcon
-} from '@chakra-ui/icons'
-
-import { MdDesktopWindows, MdVideoCameraBack } from 'react-icons/md'
+import { MdVideoCameraBack, MdSpaceDashboard } from 'react-icons/md'
 import { FaUser } from 'react-icons/fa'
 
 import {
@@ -18,9 +11,6 @@ import {
   Tooltip
 } from '@chakra-ui/react'
 
-import QRCode from "react-qr-code"
-import { useParams } from 'react-router-dom'
-import { useState, useRef, useEffect } from 'react'
 import Config, {DashboardConfig, CameraStream} from '../../Config'
 const platform = require('platform')
 
@@ -31,7 +21,7 @@ const DashboardConnection = (props: {dashboardName: string, remoteDashboard: Das
       <WrapItem key={index}>
         <Tooltip label={<>ダッシュボード<br/>{getUserInfo(data.config.userAgent)}<br/>{data.config.joinedDate} に参加</>} aria-label='A tooltip'>
           <Box rounded='md' p={1} bg='cyan.100' color='cyan.800'>
-            <Text fontSize='xs' fontWeight='bold'><Icon mb={1} as={FaUser}/> {data.config.name}</Text>
+            <Text fontSize='xs' fontWeight='bold'><Icon mb={1} as={MdSpaceDashboard}/> {data.config.name}</Text>
           </Box>
         </Tooltip>
       </WrapItem >
@@ -59,9 +49,12 @@ const DashboardConnection = (props: {dashboardName: string, remoteDashboard: Das
       <Box bg='gray.100' m={5} p={3} rounded='md'>
         <Wrap >
           <WrapItem >
-            <Tooltip label="(｀･∀･´) ｼﾞｯ..." aria-label='A tooltip'>
+            <Text fontSize='md'><Icon mb={1} as={FaUser}/> ルーム参加者 ({props.remoteVideo.length + props.remoteDashboard.length + 1}人)：</Text>
+          </WrapItem >
+          <WrapItem >
+            <Tooltip label="このダッシュボード" aria-label='A tooltip'>
               <Box rounded='md' p={1} bg='green.100' color='green.800'>
-                <Text fontSize='xs' fontWeight='bold'><Icon mb={1} as={MdDesktopWindows}/> {props.dashboardName}</Text>
+                <Text fontSize='xs' fontWeight='bold'><Icon mb={1} as={MdSpaceDashboard}/> {props.dashboardName}</Text>
               </Box>
             </Tooltip>
           </WrapItem >
