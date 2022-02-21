@@ -28,13 +28,11 @@ import {
   useToast,
   useClipboard
 } from '@chakra-ui/react'
-import { useNavigate, NavigateFunction } from "react-router-dom";
 
 import Config, {getDateTime} from '../Config'
 import Header from '../components/Layouts/Header'
 import Footer from '../components/Layouts/Footer'
-import CameraCard from '../components/Items/CameraCard'
-import SoundBeep from '../assets/audio/Beep.mp3'
+import SoundChime from '../assets/audio/Chime.mp3'
 
 import Peer, {MeshRoom} from 'skyway-js'
 
@@ -102,7 +100,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
           window.location.replace('/');
         }
         else if (data.cmd === 'soundBeep') {
-          new Audio(SoundBeep).play();
+          new Audio(SoundChime).play();
         }
       })
 
