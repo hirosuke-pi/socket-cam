@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, RefObject } from 'react'
 
-import { BiScreenshot } from 'react-icons/bi'
+import { BiScreenshot, BiZoomIn, BiZoomOut } from 'react-icons/bi'
+import { GiSpeaker } from 'react-icons/gi'
+import { MdVideoCameraBack } from 'react-icons/md'
 import { 
   ChevronDownIcon,
   CloseIcon,
@@ -40,22 +42,20 @@ import {
 } from '@chakra-ui/react'
 import ReactPlayer from 'react-player'
 import { MeshRoom } from 'skyway-js'
-
-import Config, {CameraStream} from '../../Config'
-
+import Config, {CameraStream, getDateTime} from '../../Config'
+const platform = require('platform')
 
 const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) => {
   const [videoRef, setVideoRef] = useState<any>()
   const [screenshot, setScreenshot] = useState<string>('')
   const [screenshotFilename, setScreenshotFilename] = useState<string>('')
   const { isOpen, onOpen, onClose } = useDisclosure()
-
-  console.log(props.video?.config?.cameraDevices)
-  const cameraName = props.video?.config?.cameraDevices[props.video?.config?.cameraIndex]?.text ?? '画面共有'
+  const [isCameraZoom, setCameraZoom] = useState<boolean>(false)
+  console.log(props.video.stream)
 
   const getAllCameraElements = () => {
-    return props.video?.config?.cameraDevices.map((device, index) => {
-      return <MenuItem key={device.id} onClick={() => changeCamera(index)}>{device.text}　{(index === props.video?.config?.cameraIndex) ? <CheckIcon/> : ''}</MenuItem>
+    return props.video?.camera?.devices.map((device, index) => {
+      return <MenuItem key={device.id} onClick={() => changeCamera(index)}>{device.text}　{(index === props.video?.camera?.index) ? <CheckIcon/> : ''}</MenuItem>
     })
   }
 
@@ -79,32 +79,29 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
     }
   }
 
-  const getDateTime = () => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const MM = ('0' + (d.getMonth() + 1)).slice(-2);
-    const dd = ('0' + d.getDate()).slice(-2);
-    const hh = ('0' + d.getHours()).slice(-2);
-    const mm = ('0' + d.getMinutes()).slice(-2);
-    const ss = ('0' + d.getSeconds()).slice(-2);
-    return yyyy + '-' + MM + '-' + dd + '_' + hh + '-' + mm + '-' + ss;
-}
+  const onSoundCamera = () => {
+    props.room?.send({
+      cmd: 'soundBeep',
+      peerId: props.video.peerId,
+      data: {}
+    })
+  }
 
   const onScreenshot = () => {
-    setScreenshotFilename(cameraName +'_'+ getDateTime() +'.png')
+    setScreenshotFilename(props.video?.config?.name +'_'+ getDateTime() +'.jpg')
     onOpen()
 
     const videoElement = videoRef.getInternalPlayer()
     const canvasElement = document.createElement('canvas')
 
-    const canvasSizeX = 1280; //HD画質
+    const canvasSizeX = 1920; //FullHD画質
     const canvasSizeY = (canvasSizeX*videoElement.videoHeight)/videoElement.videoWidth;
 
     canvasElement.width = canvasSizeX
     canvasElement.height = canvasSizeY
 
     canvasElement.getContext('2d')?.drawImage(videoElement, 0, 0, canvasSizeX, canvasSizeY)
-    setScreenshot(canvasElement.toDataURL('image/png'))
+    setScreenshot(canvasElement.toDataURL('image/jpg'))
   }
 
   const onDownloadScreenshot = () => {
@@ -119,10 +116,22 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
     setScreenshotFilename('')
   }
 
+  const getUserInfo = () => {
+    return platform.parse(props.video.config?.userAgent)?.description ?? props.video.config?.userAgent
+  }
+
+  const createCameraZoomElement = () => {
+    return isCameraZoom ? (
+      <MenuItem onClick={() => setCameraZoom(false)}><BiZoomOut/>　縮小</MenuItem>
+    ) : (
+      <MenuItem onClick={() => setCameraZoom(true)}><BiZoomIn/>　拡大</MenuItem>
+    )
+  }
+
   return (
     <Center py={6}>
       <Box
-        w={['87vw', '420px']}
+        w={['90vw', (isCameraZoom ? '95vw' : '420px'), (isCameraZoom ? '95vw' : '420px'), (isCameraZoom ? '95vw' : '420px'), (isCameraZoom ? '95vw' : '420px'), (isCameraZoom ? '1420px' : '420px')]}
         bg={useColorModeValue('white', 'gray.900')}
         boxShadow={'md'}
         rounded={'md'}
@@ -134,14 +143,14 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
           mx={-6}
           mb={6}
         >
-          <ReactPlayer ref={setVideoRef} url={props.video.stream} playing muted controls={true} width='420'/>
+          <ReactPlayer playsinline={true} ref={setVideoRef} url={props.video.stream} playing muted controls={true} width='100%' height='100%'/>
         </Box>
         <Stack>
           <Heading size="md" color="gray.700">
-            {(props.video?.config?.cameraIndex ?? -1 < 0) ? cameraName : `カメラ - ${cameraName}`}
+            <Icon mb={1} as={MdVideoCameraBack}/> {(props.video?.camera?.index ?? -1 < 0) ? props.video?.config?.name : `カメラ - ${props.video?.config?.name}`}
           </Heading>
           <Text color={'gray.500'}>
-            {props.video.config?.userAgent}
+            {getUserInfo()}
           </Text>
           <Box mt={5}>
             <Wrap justify={["center", "right"]} mt={5}>
@@ -173,6 +182,8 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) 
                     アクション 
                   </MenuButton>
                   <MenuList>
+                    {createCameraZoomElement()}
+                    <MenuItem onClick={onSoundCamera}><GiSpeaker/>　音を鳴らす</MenuItem>
                     <MenuItem onClick={onScreenshot}><BiScreenshot/>　スクリーンショット</MenuItem>
                     <Divider mt={2} mb={2}/>
                     <MenuItem onClick={onRemoveCamera}><CloseIcon/>　カメラを削除</MenuItem>

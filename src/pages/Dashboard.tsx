@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, RefObject } from 'react'
 
-import { RiVideoAddLine } from 'react-icons/ri'
+import { GiSpeaker } from 'react-icons/gi'
 import { 
   ChevronDownIcon,
   CloseIcon,
@@ -33,23 +33,25 @@ import {
   Icon
 } from '@chakra-ui/react'
 import { useNavigate, NavigateFunction } from "react-router-dom";
+import { RiVideoAddFill } from 'react-icons/ri'
 
-import Config, {CameraStream} from '../Config'
+import Config, {CameraStream, getDateTime, DashboardConfig} from '../Config'
 import Header from '../components/Layouts/Header'
 import Footer from '../components/Layouts/Footer'
 import CameraCard from '../components/Items/CameraCard'
 import QRLinkModalButton from '../components/Items/QRLinkModalButton'
+import DashboardConnection from '../components/Items/DashboardConnection'
 
 import Peer, {MeshRoom} from 'skyway-js'
 
 
 const Dashboard = () => {
   const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY }));
-  const [dashboardName, setDashboardName] = useState<string>(localStorage.getItem(Config().DASHBOARD_NAME) ?? 'ダッシュボード名')
+  const [dashboardName, setDashboardName] = useState<string>(localStorage.getItem(Config().DASHBOARD_NAME) ?? '新規のダッシュボードさん')
+  const [joinedDate, setJoinedDate] = useState<string>(getDateTime(false))
   const [remoteVideo, setRemoteVideo] = useState<CameraStream[]>([]);
+  const [remoteDashboard, setRemoteDashboard] = useState<DashboardConfig[]>([]);
   const [meshRoom, setMeshRoom] = useState<MeshRoom>()
-  const { hasCopied, onCopy } = useClipboard(`${window.location.href}/${localStorage.getItem(Config().DASHBOARD_ID) ?? ''}/name/${encodeURIComponent(dashboardName)}`)
-  const navigate = useNavigate();
   const toast = useToast()
 
   const onStartStream = (roomId: string) => {
@@ -60,23 +62,23 @@ const Dashboard = () => {
 
       room.once('open', () => {
         toast.closeAll()
-        toast({
-          position: 'bottom',
-          description: "接続しました。",
-          status: "success",
-          duration: 3000,
+        onToastShow('ルームに接続しました。', null)
+
+        setJoinedDate(getDateTime(false))
+        room.send({
+          cmd: 'getDashboardConfig',
+          broadcast: true,
+          data: {}
         })
       });
 
       room.on('peerJoin', peerId => {
         console.log(peerId)
-        toast.closeAll()
-        toast({
-          position: 'bottom',
-          title: 'カメラが追加されました。',
-          description: `ペアID: ${peerId}`,
-          status: 'success',
-          duration: 3000,
+
+        room.send({
+          cmd: 'getDashboardConfig',
+          peerId: peerId,
+          data: {}
         })
       });
 
@@ -85,43 +87,81 @@ const Dashboard = () => {
           return prev.filter((video) => {
             if (video.peerId === peerId) {
               video.stream.getTracks().forEach((track) => track.stop());
+              onToastShow(`${video?.config?.name}`, 'カメラが切断されました。', true)
             }
             return video.peerId !== peerId
           })
         })
-
-        toast({
-          position: 'bottom',
-          title: 'カメラが切断されました。',
-          status: "error",
-          description: `ペアID: ${peerId}`,
-          duration: 3000,
+        setRemoteDashboard((prev) => {
+          return prev.filter((dashboard) => {
+            if (dashboard.peerId === peerId) {
+              onToastShow(`${dashboard?.config?.name}`, 'ダッシュボードが切断されました。', true)
+            }
+            return dashboard.peerId !== peerId
+          })
         })
       })
 
       room.on('stream', async (stream) => {
         setRemoteVideo((prev) => [
           ...prev,
-          { stream: stream, peerId: stream.peerId, config: null },
+          { stream: stream, peerId: stream.peerId, config: null, camera: null},
         ]);
 
         room.send({
-          cmd: 'getUserAgent',
+          cmd: 'getConfig',
           peerId: stream.peerId,
           data: {}
         })
       })
 
+      // ルーム内コマンド受信
       room.on('data', ({data, src}) => {
         if (!data?.cmd || (data?.peerId !== peer.current.id && !data?.broadcast)) return
 
-        if (data.cmd === 'getUserAgent') {
+        if (data.cmd === 'setConfig') {
           setRemoteVideo(prev => prev.map(videoData => {
             if (videoData.peerId === src) {
-              videoData.config = data.data
+              videoData.config = data.data.config
+              videoData.camera = data.data.camera
             }
             return videoData
           }))
+          onToastShow(`${data.data.config.name}`, 'カメラが接続されました。')
+        }
+        if (data.cmd === 'setDashboardName') {
+          setRemoteDashboard(prev => prev.map(dashboard => {
+            if (dashboard.peerId === src) {
+              dashboard.config.name = data.data.name
+            }
+            return dashboard
+          }))
+        }
+        else if (data.cmd === 'setDashboardConfig') {
+          setRemoteDashboard((prev: DashboardConfig[]) => {
+            if (prev.filter(data => data.peerId === src).length === 0) {
+              return [...prev, {
+                peerId: src,
+                config: data.data.config
+              },]
+            }
+            return prev
+          })
+          onToastShow(`${data.data.config.name}`, 'ダッシュボードが接続されました。')
+        }
+        else if (data.cmd === 'getDashboardConfig') {
+          room.send({
+            cmd: 'setDashboardConfig',
+            status: 'success',
+            peerId: src,
+            data: {
+              config: {
+                userAgent: window.navigator.userAgent,
+                name: dashboardName,
+                joinedDate: joinedDate
+              }
+            }
+          })
         }
         else if (data.cmd === 'removeCamera') {
           removeDashboardData()
@@ -132,19 +172,18 @@ const Dashboard = () => {
     } catch (error) {
       console.log(error)
       toast.closeAll()
-      toast({
-        position: 'bottom',
-        description: "サーバーに接続できませんでした。再度更新して接続してください。",
-        status: "error",
-        duration: 3000,
-      })
+      onToastShow('ルームに接続できませんでした。5秒後に再接続します...', null, true)
+
+      setTimeout(() => {
+        window.location.reload()
+      }, 5000)
     }
   }
 
   useEffect(() => {
     toast({
       position: 'bottom',
-      description: (<><Spinner size='xs' /> サーバーに接続中... </>),
+      description: (<><Spinner size='xs' /> ルームに接続中... </>),
       duration: null,
     })
 
@@ -157,11 +196,28 @@ const Dashboard = () => {
     setTimeout(() => onStartStream(room), 1000)
   }, [])
 
+  const onToastShow = (description: string, title: string|null = null,  isError: boolean = false) => {
+    toast({
+      position: 'bottom',
+      title: title,
+      description: description,
+      status: isError ? 'error' : 'success',
+      duration: 3000,
+    })
+  }
+
 
   const onSetDashboardName = (name: string) => {
     if (name !== '') {
       setDashboardName(name)
       localStorage.setItem(Config().DASHBOARD_NAME, name)
+      meshRoom?.send({
+        cmd: 'setDashboardName',
+        broadcast: true,
+        data: {
+          name: name
+        }
+      })
     }
   }
 
@@ -176,16 +232,6 @@ const Dashboard = () => {
       return <Box w='full' h='60vh'><Center>「カメラ追加」ボタンを押して、監視カメラを追加しよう！</Center></Box>
     }
   };
-
-  const onCopyUrl = () => {
-    onCopy()
-    toast({
-      position: 'bottom',
-      description: 'クリップボードにコピーしました！',
-      status: 'success',
-      duration: 3000,
-    })
-  }
 
   const onRemoveAllCamera = () => {
     if (window.confirm('全てのカメラを終了します。よろしいですか？')) {
@@ -203,6 +249,37 @@ const Dashboard = () => {
     window.location.replace('/')
   }
 
+  const onShareDashboardLink = (onOpen: React.MouseEventHandler<HTMLButtonElement>) => {
+    return (
+      <MenuItem onClick={onOpen}><LinkIcon/>　ダッシュボードを共有</MenuItem>
+    )
+  }
+
+  const onShareCameraLink = (onOpen: React.MouseEventHandler<HTMLButtonElement>) => {
+    return (
+      <Button 
+        m={2} 
+        colorScheme="teal"
+        mt={2}
+        mb={2}
+        rightIcon={<RiVideoAddFill/>}
+        onClick={onOpen}
+      >
+        カメラ追加
+      </Button>
+    )
+  }
+
+  const onSoundBroadCast = () => {
+    if (window.confirm('本当に全てのカメラに対して音を鳴らしますか？')) {
+      meshRoom?.send({
+        cmd: 'soundBeep',
+        broadcast: true,
+        data: {}
+      })
+    }
+  }
+
   return (
     <>
       <Header/>
@@ -217,7 +294,11 @@ const Dashboard = () => {
           </WrapItem >
           <WrapItem >
             <Flex>
-              <QRLinkModalButton/>
+              <QRLinkModalButton 
+                buttonElement={onShareCameraLink} 
+                title='監視カメラを追加' 
+                url={`${window.location.origin}/room/${localStorage.getItem(Config().DASHBOARD_ID) ?? ''}/camera`}
+              />
               <Menu>
                 <MenuButton
                   mt={2}
@@ -230,8 +311,13 @@ const Dashboard = () => {
                   アクション 
                 </MenuButton>
                 <MenuList>
-                  <MenuItem onClick={onCopyUrl}><LinkIcon/>　リンクをコピー</MenuItem>
                   <MenuItem onClick={() => window.location.href = '/'}><ArrowBackIcon/>　ホームに戻る</MenuItem>
+                  <QRLinkModalButton 
+                    buttonElement={onShareDashboardLink} 
+                    title='ダッシュボードを共有' 
+                    url={`${window.location.href}/${localStorage.getItem(Config().DASHBOARD_ID) ?? ''}`}
+                  />
+                  <MenuItem onClick={onSoundBroadCast}><GiSpeaker/>　全体に音を鳴らす</MenuItem>
                   <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　サーバーに再接続</MenuItem>
                   <Divider mt={2} mb={2}/>
                   <MenuItem onClick={onRemoveAllCamera}><DeleteIcon/>　ダッシュボードを削除</MenuItem>
@@ -241,6 +327,7 @@ const Dashboard = () => {
           </WrapItem >
         </Wrap>
         <Box h="3px" m={2} bg="blue.400"/>
+        <DashboardConnection dashboardName={dashboardName} remoteDashboard={remoteDashboard} remoteVideo={remoteVideo}/>
         <Wrap m={5}>
           {showCamera()}
         </Wrap>

@@ -8,7 +8,6 @@ const LinkDashboard = () => {
   const params = useParams()
   const navigate = useNavigate()
   const roomId = params?.roomId ?? ''
-  const dashboardName = params?.dashboardName ?? ''
 
   useEffect(() => {
     if (roomId.length <= 0) {
@@ -21,7 +20,7 @@ const LinkDashboard = () => {
       return
     }
 
-    localStorage.setItem(Config().DASHBOARD_NAME, decodeURIComponent(dashboardName))
+    localStorage.clear()
     localStorage.setItem(Config().DASHBOARD_ID, roomId)
     window.location.replace('/dashboard')
   }, [])

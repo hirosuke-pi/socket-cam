@@ -30,10 +30,11 @@ import {
 } from '@chakra-ui/react'
 import { useNavigate, NavigateFunction } from "react-router-dom";
 
-import Config from '../Config'
+import Config, {getDateTime} from '../Config'
 import Header from '../components/Layouts/Header'
 import Footer from '../components/Layouts/Footer'
 import CameraCard from '../components/Items/CameraCard'
+import SoundBeep from '../assets/audio/Beep.mp3'
 
 import Peer, {MeshRoom} from 'skyway-js'
 
@@ -46,17 +47,18 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
   const params = useParams()
   const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY }))
   const [roomId] = useState<string>(params.roomId || '')
+  const [joinedDate, setJoinedDate] = useState<string>(getDateTime(false))
   const [localStream, setLocalStream] = useState<MediaStream>()
   const [cameraDevices, setCameraDevices] = useState<Device[]>([])
   const [cameraIndex, setCameraIndex] = useState<number>(0)
   const [isSmartPhone] = useState<boolean>(/iPhone|Android|iPad/.test(navigator.userAgent))
   const { hasCopied, onCopy } = useClipboard(window.location.href)
+  const [SoundStatus, setSoundStatus] = useState('STOPPED');
   const toast = useToast()
   
   
   const onStartCamera = (stream: MediaStream, index: number, devices: Device[]) => {
     try {
-      let globalRoomId = ''
       const room = peer.current.joinRoom(roomId, {
         mode: 'mesh',
         stream: stream
@@ -65,25 +67,31 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
       room.once('open', () => {
         toast({
           position: 'bottom',
-          description: "接続しました。",
+          description: "ルームに接続しました。",
           status: "success",
           duration: 3000,
         })
+        setJoinedDate(getDateTime(false))
       });
 
       room.on('data', async ({data, src}) => {
-        console.log(!data?.cmd || (data?.peerId !== peer.current.id && !data?.broadcast))
         if (!data?.cmd || (data?.peerId !== peer.current.id && !data?.broadcast)) return
 
-        if (data.cmd === 'getUserAgent') {
+        if (data.cmd === 'getConfig') {
           room.send({
-            cmd: data.cmd,
+            cmd: 'setConfig',
             status: 'success',
             peerId: src,
             data: {
-              userAgent: window.navigator.userAgent,
-              cameraIndex: index,
-              cameraDevices: devices
+              config: {
+                userAgent: window.navigator.userAgent,
+                name: devices?.[index]?.text ?? '画面共有',
+                joinedDate: joinedDate
+              },
+              camera: {
+                index: index,
+                devices: devices
+              }
             }
           })
         }
@@ -92,6 +100,9 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
         }
         else if (data.cmd === 'removeCamera') {
           window.location.replace('/');
+        }
+        else if (data.cmd === 'soundBeep') {
+          new Audio(SoundBeep).play();
         }
       })
 
@@ -243,7 +254,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
         </Wrap>
         <Box h="3px" m={2} bg="blue.400"/>
         <Center>
-          <ReactPlayer url={localStream} playing muted controls={true} width='95vw' height='75vh'/>
+          <ReactPlayer playsinline={true} url={localStream} playing muted controls={true} width='95vw' height='75vh'/>
         </Center>
       <Footer/>
     </>
