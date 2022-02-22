@@ -46,7 +46,7 @@ import Peer, {MeshRoom} from 'skyway-js'
 
 
 const Dashboard = () => {
-  const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY }));
+  const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY, debug: 0 }));
   const [dashboardName, setDashboardName] = useState<string>(localStorage.getItem(Config().DASHBOARD_NAME) ?? '新規のダッシュボードさん')
   const [joinedDate, setJoinedDate] = useState<string>(getDateTime(false))
   const [remoteVideo, setRemoteVideo] = useState<CameraStream[]>([]);
@@ -105,7 +105,7 @@ const Dashboard = () => {
       room.on('stream', async (stream) => {
         setRemoteVideo((prev) => [
           ...prev,
-          { stream: stream, peerId: stream.peerId, config: null, camera: null, images: []},
+          { stream: stream, peerId: stream.peerId, config: null, camera: null, images: [null]},
         ]);
 
         room.send({
@@ -225,7 +225,7 @@ const Dashboard = () => {
   const showCamera = () => {
     if (remoteVideo.length > 0) {
       return remoteVideo.map((video) => {
-        return <CameraCard video={video} setRemoteVideo={setRemoteVideo} key={video.peerId} room={meshRoom}/>;
+        return <CameraCard video={video} key={video.peerId} room={meshRoom}/>;
       });
     }
     else {

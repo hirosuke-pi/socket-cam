@@ -28,7 +28,7 @@ export const getDateTime = (isFileName: boolean = true): string => {
   if (isFileName) {
     return yyyy + '-' + MM + '-' + dd + '_' + hh + '-' + mm + '-' + ss;
   }
-  return yyyy + '/' + MM + '/' + dd + ' ' + hh + ':' + mm + ':' + ss;
+  return yyyy + '年' + MM + '月' + dd + '日 ' + hh + '時' + mm + '分' + ss + '秒';
 }
 
 export type CameraStream = {
@@ -46,7 +46,6 @@ export type CameraStream = {
       id: string
     }]
   } | null
-  images: string[]
 };
 
 export type DashboardConfig = {
@@ -57,5 +56,10 @@ export type DashboardConfig = {
     userAgent: string
   }
 }
+
+export type EmotionImages = {
+  image: string,
+  date: string
+}[]
 
 export default Config

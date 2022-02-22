@@ -43,20 +43,29 @@ import {
   FormLabel,
   Switch
 } from '@chakra-ui/react'
+
 import ReactPlayer from 'react-player'
 import { MeshRoom } from 'skyway-js'
-import Config, {CameraStream, getDateTime} from '../../Config'
+
+import Config, {CameraStream, getDateTime, EmotionImages} from '../../Config'
 import DrawerImageButton from './DrawerImageButton'
+
 const platform = require('platform')
 
-const CameraCard = (props: { video: CameraStream, setRemoteVideo: Function, room: MeshRoom | undefined }) => {
+
+const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined }) => {
   const [videoRef, setVideoRef] = useState<any>()
   const [screenshot, setScreenshot] = useState<string>('')
   const [screenshotFilename, setScreenshotFilename] = useState<string>('')
-  const [isMotionEnable, setIsMotionEnable] = useState<boolean>(false)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [isCameraZoom, setCameraZoom] = useState<boolean>(false)
-  console.log(props.video.stream)
+
+  const [isMotionEnable, setIsMotionEnable] = useState<boolean>(false)
+  const [isMotionMove, setMotionMove] = useState<boolean>(false)
+  const [motionImages, setMotionImages] = useState<EmotionImages>([])
+
+  let motionMatrix: number[] = []
+  let motionIntervalTmp: any = null
 
   const getAllCameraElements = () => {
     return props.video?.camera?.devices.map((device, index) => {
@@ -65,6 +74,7 @@ const CameraCard = (props: { video: CameraStream, setRemoteVideo: Function, room
   }
 
   const changeCamera = (index: number) => {
+    exitMotionInterval()
     props.room?.send({
       cmd: 'changeCamera',
       peerId: props.video.peerId,
@@ -76,6 +86,7 @@ const CameraCard = (props: { video: CameraStream, setRemoteVideo: Function, room
 
   const onRemoveCamera = () => {
     if (window.confirm('本当に監視カメラを終了しますか？')) {
+      exitMotionInterval()
       props.room?.send({
         cmd: 'removeCamera',
         peerId: props.video.peerId,
@@ -92,21 +103,47 @@ const CameraCard = (props: { video: CameraStream, setRemoteVideo: Function, room
     })
   }
 
-  const onScreenshot = () => {
-    setScreenshotFilename(props.video?.config?.name +'_'+ getDateTime() +'.jpg')
-    onOpen()
 
+  const onScreenshotCanvas = (sizeX: number = 1920) => {
     const videoElement = videoRef.getInternalPlayer()
+    if (videoElement == null) return null
+
     const canvasElement = document.createElement('canvas')
 
-    const canvasSizeX = 1920; //FullHD画質
+    const canvasSizeX = sizeX; //FullHD画質
     const canvasSizeY = (canvasSizeX*videoElement.videoHeight)/videoElement.videoWidth;
 
     canvasElement.width = canvasSizeX
     canvasElement.height = canvasSizeY
 
     canvasElement.getContext('2d')?.drawImage(videoElement, 0, 0, canvasSizeX, canvasSizeY)
-    setScreenshot(canvasElement.toDataURL('image/jpg'))
+
+    return canvasElement
+  }
+
+  const getCanvasMatrix = (canvas: HTMLCanvasElement | null) => {
+    if (canvas === null) return []
+
+    const ctx = canvas.getContext("2d")
+    const sourceCanvas = ctx?.getImageData(0, 0, canvas?.width, canvas?.height) ?? null
+
+    if (sourceCanvas == null) return []
+
+    const matrix = []
+    for (let p = 0; p < sourceCanvas.data.length; p += 4) {
+      const y = 0.2126 * sourceCanvas.data[p] + 0.7152 * sourceCanvas.data[p + 1] + 0.0722 * sourceCanvas.data[p + 2]
+      matrix.push(Math.round(y))
+    }
+
+    return matrix
+  }
+
+
+  const onScreenshot = () => {
+    setScreenshotFilename(props.video?.config?.name +'_'+ getDateTime() +'.jpg')
+    onOpen()
+
+    setScreenshot(onScreenshotCanvas()?.toDataURL('image/jpg') ?? '')
   }
 
   const onDownloadScreenshot = () => {
@@ -136,11 +173,43 @@ const CameraCard = (props: { video: CameraStream, setRemoteVideo: Function, room
   const onChangedMotion = (isChecked: boolean ) => {
     setIsMotionEnable(isChecked)
     if (isChecked) {
+      motionIntervalTmp = setInterval(() =>{
+        const matrixSizeX = 30 // 縮小時の横幅
+        const errorValue = 5 // 前回の値との許容誤差
+        const threshold = 50 // 動体検知のしきい値
 
+        const matrix = getCanvasMatrix(onScreenshotCanvas(matrixSizeX))
+        if (matrix.length <= 0) {
+          exitMotionInterval()
+        }
+        else if (motionMatrix.length <= 0) {
+          motionMatrix = matrix
+          return
+        }
+
+        const diff = matrix.filter((nowValue, index) => {
+          return motionMatrix[index] + errorValue < nowValue || motionMatrix[index] > nowValue + errorValue
+        }).length
+        motionMatrix = matrix
+        
+        if (diff > threshold) {
+          const insertImage = {image: onScreenshotCanvas(640)?.toDataURL('image/jpg') ?? '', date: getDateTime(false)}
+          setMotionImages(prev => [insertImage, ...(prev.length >= 10 ? prev.slice(0, -1) : prev)])
+          setMotionMove(true)
+        }
+        else {
+          setMotionMove(false)
+        }
+      }, 2000)
     }
     else {
-
+      exitMotionInterval()
     }
+  }
+
+  const exitMotionInterval = () => {
+    motionMatrix = []
+    clearInterval(motionIntervalTmp)
   }
 
   return (
@@ -157,6 +226,8 @@ const CameraCard = (props: { video: CameraStream, setRemoteVideo: Function, room
           mt={-6}
           mx={-6}
           mb={6}
+          borderWidth={isMotionEnable && isMotionMove ? '5px' : '0px'}
+          borderColor={'orange.400'}
         >
           <ReactPlayer playsinline={true} ref={setVideoRef} url={props.video.stream} playing muted controls={true} width='100%' height='100%'/>
         </Box>
@@ -170,7 +241,7 @@ const CameraCard = (props: { video: CameraStream, setRemoteVideo: Function, room
           <Divider/>
           <FormControl display='flex' alignItems='center' pt={3}>
             <FormLabel  htmlFor='motion' mb='0'>
-              <Icon as={MdPeopleAlt}/> モーション・人検知
+              <Icon as={MdPeopleAlt}/> モーション検知
             </FormLabel>
             <Switch id='motion' onChange={(event) => onChangedMotion(event.target.checked)}/>
           </FormControl>
@@ -204,7 +275,7 @@ const CameraCard = (props: { video: CameraStream, setRemoteVideo: Function, room
                     アクション 
                   </MenuButton>
                   <MenuList>
-                    <DrawerImageButton isDisabled={isMotionEnable} remoteVideo={props.video.images}/>
+                    <DrawerImageButton remoteImages={motionImages} title={props.video?.config?.name ?? 'なし'}/>
                     <MenuItem onClick={onScreenshot}><BiScreenshot/>　スクリーンショット</MenuItem>
                     <MenuItem onClick={onSoundCamera}><GiSpeaker/>　音を鳴らす</MenuItem>
                     {createCameraZoomElement()}

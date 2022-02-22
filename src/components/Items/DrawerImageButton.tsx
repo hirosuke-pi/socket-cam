@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useEffect } from 'react'
 
 import {
   Drawer,
@@ -10,18 +10,34 @@ import {
   DrawerCloseButton,
   MenuItem,
   Button,
-  useDisclosure
+  useDisclosure,
+  Box,
+  Image,
+  Text,
+  Center
 } from '@chakra-ui/react'
 
 import { BiImages } from 'react-icons/bi'
 
+import {EmotionImages} from '../../Config'
 
-const DrawerImageButton = (props: {isDisabled: boolean, remoteVideo: string[]}) => {
+const DrawerImageButton = (props: {remoteImages: EmotionImages, title: string}) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
+
+  const showAllImages = () => {
+    return props.remoteImages.map((image, index) => {
+      return (
+        <Box key={index} mb={4}>
+          <Image src={image?.image} alt='image'/>
+          <Center>{image?.date}</Center>
+        </Box>
+      )
+    })
+  }
 
   return (
     <>
-      <MenuItem onClick={onOpen} isDisabled={!props.isDisabled}><BiImages/>　検知した画像を見る</MenuItem>
+      <MenuItem onClick={onOpen}><BiImages/>　検知した画像を見る</MenuItem>
       <Drawer
         isOpen={isOpen}
         placement='right'
@@ -30,9 +46,9 @@ const DrawerImageButton = (props: {isDisabled: boolean, remoteVideo: string[]}) 
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton />
-          <DrawerHeader>検知した画像一覧</DrawerHeader>
+          <DrawerHeader>{props.title}</DrawerHeader>
           <DrawerBody>
-            aaaaaaaa
+            {isOpen ? showAllImages() : ''}
           </DrawerBody>
         </DrawerContent>
       </Drawer>
