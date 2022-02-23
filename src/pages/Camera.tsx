@@ -10,6 +10,7 @@ import {
   CloseIcon,
   CheckIcon
 } from '@chakra-ui/icons'
+import { MdVideoCameraBack, MdSpaceDashboard } from 'react-icons/md'
 
 import {
   Menu,
@@ -28,14 +29,13 @@ import {
   useToast,
   useClipboard
 } from '@chakra-ui/react'
-import { useNavigate, NavigateFunction } from "react-router-dom";
 
 import Config, {getDateTime} from '../Config'
 import Header from '../components/Layouts/Header'
 import Footer from '../components/Layouts/Footer'
-import CameraCard from '../components/Items/CameraCard'
-import SoundBeep from '../assets/audio/Beep.mp3'
+import SoundChime from '../assets/audio/Chime.mp3'
 
+import QRLinkModalButton from '../components/Items/QRLinkModalButton'
 import Peer, {MeshRoom} from 'skyway-js'
 
 type Device = {
@@ -52,8 +52,6 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
   const [cameraDevices, setCameraDevices] = useState<Device[]>([])
   const [cameraIndex, setCameraIndex] = useState<number>(0)
   const [isSmartPhone] = useState<boolean>(/iPhone|Android|iPad/.test(navigator.userAgent))
-  const { hasCopied, onCopy } = useClipboard(window.location.href)
-  const [SoundStatus, setSoundStatus] = useState('STOPPED');
   const toast = useToast()
   
   
@@ -102,7 +100,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
           window.location.replace('/');
         }
         else if (data.cmd === 'soundBeep') {
-          new Audio(SoundBeep).play();
+          new Audio(SoundChime).play();
         }
       })
 
@@ -148,7 +146,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
       console.log(devices)
       setCameraDevices(devices)
 
-      if (devices.length <= 0 || devices.length <= index) {
+      if (isCamera && (devices.length <= 0 || devices.length <= index)) {
         toast({
           position: 'bottom',
           description: "カメラが見つかりませんでした。",
@@ -187,16 +185,6 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
     })
   }
 
-  const onCopyUrl = () => {
-    onCopy()
-    toast({
-      position: 'bottom',
-      description: 'クリップボードにコピーしました！',
-      status: 'success',
-      duration: 3000,
-    })
-  }
-
   const onDropout = () => {
     if (window.confirm('本当に監視カメラを終了しますか？')) {
       window.location.href = '/'
@@ -208,7 +196,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
       <Header/>
         <Wrap justify={["center", "space-between"]} mr={5} ml={5}>
           <WrapItem>
-            <Heading ml={5} mr={5} mt={5} size="md" color="gray.700"><Center>{isCamera ? `カメラ - ${cameraDevices[cameraIndex]?.text}` : '画面共有'}</Center></Heading>
+            <Heading ml={5} mr={5} mt={5} size="md" color="gray.700"><Center>{isCamera ? `カメラ - ${cameraDevices[cameraIndex]?.text ?? 'なし'}` : '画面共有'}</Center></Heading>
           </WrapItem >
           <WrapItem >
             <Menu>
@@ -244,7 +232,15 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
                 アクション 
               </MenuButton>
               <MenuList>
-                <MenuItem onClick={onCopyUrl}><LinkIcon/>　リンクを共有</MenuItem>
+                <QRLinkModalButton 
+                  buttonElement={(onOpen: React.MouseEventHandler<HTMLButtonElement>) => {
+                    return (
+                      <MenuItem onClick={onOpen}><LinkIcon/>　カメラを増やす</MenuItem>
+                    )
+                  }} 
+                  title='カメラを増やす' 
+                  url={`${window.location.origin}/room/${params?.roomId ?? ''}/camera`}
+                />
                 <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　サーバーに再接続</MenuItem>
                 <Divider mt={2} mb={2}/>
                 <MenuItem onClick={onDropout}><CloseIcon/>　カメラを切断</MenuItem>

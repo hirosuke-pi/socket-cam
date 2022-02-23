@@ -46,7 +46,7 @@ import Peer, {MeshRoom} from 'skyway-js'
 
 
 const Dashboard = () => {
-  const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY }));
+  const peer = useRef(new Peer({ key: Config().SKYWAY_API_KEY, debug: 0 }));
   const [dashboardName, setDashboardName] = useState<string>(localStorage.getItem(Config().DASHBOARD_NAME) ?? '新規のダッシュボードさん')
   const [joinedDate, setJoinedDate] = useState<string>(getDateTime(false))
   const [remoteVideo, setRemoteVideo] = useState<CameraStream[]>([]);
@@ -105,7 +105,7 @@ const Dashboard = () => {
       room.on('stream', async (stream) => {
         setRemoteVideo((prev) => [
           ...prev,
-          { stream: stream, peerId: stream.peerId, config: null, camera: null},
+          { stream: stream, peerId: stream.peerId, config: null, camera: null, images: [null]},
         ]);
 
         room.send({
@@ -249,12 +249,6 @@ const Dashboard = () => {
     window.location.replace('/')
   }
 
-  const onShareDashboardLink = (onOpen: React.MouseEventHandler<HTMLButtonElement>) => {
-    return (
-      <MenuItem onClick={onOpen}><LinkIcon/>　ダッシュボードを共有</MenuItem>
-    )
-  }
-
   const onShareCameraLink = (onOpen: React.MouseEventHandler<HTMLButtonElement>) => {
     return (
       <Button 
@@ -295,7 +289,11 @@ const Dashboard = () => {
           <WrapItem >
             <Flex>
               <QRLinkModalButton 
-                buttonElement={onShareCameraLink} 
+                buttonElement={(onOpen: React.MouseEventHandler<HTMLButtonElement>) => {
+                  return (
+                    <Button m={2} colorScheme="teal" mt={2} mb={2} rightIcon={<RiVideoAddFill/>}onClick={onOpen}> カメラ追加 </Button>
+                  )
+                }} 
                 title='監視カメラを追加' 
                 url={`${window.location.origin}/room/${localStorage.getItem(Config().DASHBOARD_ID) ?? ''}/camera`}
               />
@@ -313,7 +311,11 @@ const Dashboard = () => {
                 <MenuList>
                   <MenuItem onClick={() => window.location.href = '/'}><ArrowBackIcon/>　ホームに戻る</MenuItem>
                   <QRLinkModalButton 
-                    buttonElement={onShareDashboardLink} 
+                    buttonElement={(onOpen: React.MouseEventHandler<HTMLButtonElement>) => {
+                      return (
+                        <MenuItem onClick={onOpen}><LinkIcon/>　ダッシュボードを共有</MenuItem>
+                      )
+                    }} 
                     title='ダッシュボードを共有' 
                     url={`${window.location.href}/${localStorage.getItem(Config().DASHBOARD_ID) ?? ''}`}
                   />
