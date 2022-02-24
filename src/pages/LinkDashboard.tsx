@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom'
 import { useNavigate, NavigateFunction } from "react-router-dom";
+import { Helmet } from "react-helmet-async"
 
 import Config from '../Config'
 
@@ -25,7 +26,14 @@ const LinkDashboard = () => {
     window.location.replace('/dashboard')
   }, [])
 
-  return <></>
+  return (<>
+    <Helmet
+      title={'Socket Cam - ダッシュボード共有'}
+      meta={[
+        { name: 'Socket Cam - ダッシュボード共有', content: 'ダッシュボードが共有されました。アクセスすると、設定された監視カメラを操作することができます。' }
+      ]}
+    /></>
+  )
 };
 
 export default LinkDashboard;

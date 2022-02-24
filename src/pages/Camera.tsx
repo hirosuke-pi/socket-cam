@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useState, useRef, useEffect, RefObject } from 'react'
+import { Helmet } from "react-helmet-async"
 
 import ReactPlayer from 'react-player'
 
@@ -249,6 +250,12 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
 
   return (
     <>
+      <Helmet
+        title={'Socket Cam - カメラ'}
+        meta={[
+          { name: 'Socket Cam - カメラ', content: 'カメラが共有されました。アクセスすると、この端末を監視カメラとして設定することができます。' }
+        ]}
+      />
       <Header/>
         <Wrap justify={["center", "space-between"]} mr={5} ml={5}>
           <WrapItem>

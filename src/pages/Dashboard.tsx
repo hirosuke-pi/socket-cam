@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, RefObject } from 'react'
+import { Helmet } from "react-helmet-async"
 
 import { GiSpeaker } from 'react-icons/gi'
 import { 
@@ -61,7 +62,6 @@ const Dashboard = () => {
       })
 
       room.once('open', () => {
-        toast.closeAll()
         onToastShow('ルームに接続しました。', null)
 
         setJoinedDate(getDateTime(false))
@@ -197,6 +197,7 @@ const Dashboard = () => {
   }, [])
 
   const onToastShow = (description: string, title: string|null = null,  isError: boolean = false) => {
+    toast.closeAll()
     toast({
       position: 'bottom',
       title: title,
@@ -261,6 +262,12 @@ const Dashboard = () => {
 
   return (
     <>
+      <Helmet
+        title={'Socket Cam - ダッシュボード'}
+        meta={[
+          { name: 'Socket Cam - ダッシュボード', content: 'あなたのスマホを監視カメラ代わりに。' }
+        ]}
+      />
       <Header/>
         <Wrap justify={["center", "space-between"]} mr={5} ml={5}>
           <WrapItem>

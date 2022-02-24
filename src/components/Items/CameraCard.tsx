@@ -236,7 +236,6 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined, to
 
 
   const exitMotionInterval = () => {
-    console.log('exit', motionInterval)
     setMotionMatrix([])
     setMotionInterval(null)
     clearInterval(motionInterval)
