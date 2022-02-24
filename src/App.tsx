@@ -14,7 +14,6 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/room/:roomId/camera" element={<Camera />} />
-          <Route path="/room/:roomId/camera/:cameraId" element={<Camera />} />
           <Route path="/room/:roomId/display" element={<Camera isCamera={false} />} />
           <Route path="/dashboard/:roomId" element={<LinkDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />

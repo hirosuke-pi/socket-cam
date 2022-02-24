@@ -225,7 +225,7 @@ const Dashboard = () => {
   const showCamera = () => {
     if (remoteVideo.length > 0) {
       return remoteVideo.map((video) => {
-        return <CameraCard video={video} key={video.peerId} room={meshRoom}/>;
+        return <CameraCard video={video} key={video.peerId} room={meshRoom} toastShow={onToastShow} dashboardName={dashboardName}/>;
       });
     }
     else {
@@ -247,21 +247,6 @@ const Dashboard = () => {
   const removeDashboardData = () => {
     localStorage.clear()
     window.location.replace('/')
-  }
-
-  const onShareCameraLink = (onOpen: React.MouseEventHandler<HTMLButtonElement>) => {
-    return (
-      <Button 
-        m={2} 
-        colorScheme="teal"
-        mt={2}
-        mb={2}
-        rightIcon={<RiVideoAddFill/>}
-        onClick={onOpen}
-      >
-        カメラ追加
-      </Button>
-    )
   }
 
   const onSoundBroadCast = () => {

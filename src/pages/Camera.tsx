@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useState, useRef, useEffect, RefObject } from 'react'
+
 import ReactPlayer from 'react-player'
 
 import { 
@@ -10,7 +11,7 @@ import {
   CloseIcon,
   CheckIcon
 } from '@chakra-ui/icons'
-import { MdVideoCameraBack, MdSpaceDashboard } from 'react-icons/md'
+import { GiSpeaker } from 'react-icons/gi'
 
 import {
   Menu,
@@ -37,6 +38,8 @@ import SoundChime from '../assets/audio/Chime.mp3'
 
 import QRLinkModalButton from '../components/Items/QRLinkModalButton'
 import Peer, {MeshRoom} from 'skyway-js'
+import { Howl } from 'howler'
+import { useNavigate, NavigateFunction } from 'react-router-dom'
 
 type Device = {
   text: string,
@@ -51,8 +54,12 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
   const [localStream, setLocalStream] = useState<MediaStream>()
   const [cameraDevices, setCameraDevices] = useState<Device[]>([])
   const [cameraIndex, setCameraIndex] = useState<number>(0)
+  const [cameraChangeIndex, setCameraChangeIndex] = useState<number>(-1)
+  const [playerIndex, setPlayerIndex] = useState<number>(0)
   const [isSmartPhone] = useState<boolean>(/iPhone|Android|iPad/.test(navigator.userAgent))
+  const [meshRoom, setMeshRoom] = useState<MeshRoom>()
   const toast = useToast()
+  const navigate = useNavigate();
   
   
   const onStartCamera = (stream: MediaStream, index: number, devices: Device[]) => {
@@ -94,15 +101,34 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
           })
         }
         else if (data.cmd === 'changeCamera') {
-          window.location.replace(`/room/${roomId}/camera/${data.data.cameraIndex}`)
+          navigate(`/room/${params?.roomId ?? ''}/camera`)
+          room.close()
+          setCameraChangeIndex(data.data.cameraIndex)
         }
         else if (data.cmd === 'removeCamera') {
           window.location.replace('/');
         }
         else if (data.cmd === 'soundBeep') {
+          navigate('')
           new Audio(SoundChime).play();
         }
+        else if (data.cmd === 'soundNotification') {
+          (new Howl({src: SoundChime})).play()
+          toast({
+            position: 'bottom',
+            title: data?.data?.from + ' からメッセージ',
+            description: data?.data?.text ?? '',
+            duration: 3000,
+          })
+          setTimeout(() => {
+            const uttr = new SpeechSynthesisUtterance(data?.data?.text ?? '')
+            if (!uttr) return
+            uttr.lang = 'ja-JP'
+            speechSynthesis.speak(uttr)
+          }, 1600)
+        }
       })
+      setMeshRoom(room)
 
     } catch (error) {
       console.log(error)
@@ -131,11 +157,21 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
   }
 
   useEffect(() => {
-    getCameraList().then(devices => {
-      // カメラデバイスの設定
-      const index = isNaN(Number(params?.cameraId)) ? 0 : Number(params?.cameraId)
-      setCameraIndex(index)
+    getCameraStream(0)
+  }, [])
 
+  useEffect(() => {
+    if (cameraChangeIndex < 0) return
+    getCameraStream(cameraChangeIndex)
+    setCameraChangeIndex(-1)
+    setTimeout(() => {
+      setPlayerIndex(cameraChangeIndex)
+    }, 2000)
+  }, [cameraChangeIndex])
+
+
+  const getCameraStream = (index: number) => {
+    getCameraList().then(devices => {
       // スマホ判定
       if (isSmartPhone) {
         devices = [
@@ -145,6 +181,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
       }
       console.log(devices)
       setCameraDevices(devices)
+      setCameraIndex(index)
 
       if (isCamera && (devices.length <= 0 || devices.length <= index)) {
         toast({
@@ -159,13 +196,13 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
       // 画面共有かカメラか
       if (isCamera) {
         navigator.mediaDevices.getUserMedia({ video: isSmartPhone ? { facingMode: devices[index].id } : {deviceId: devices[index].id}, audio: true }).then(localStreamTmp => {
-          setLocalStream(() => localStreamTmp)
+          setLocalStream(localStreamTmp)
           onStartCamera(localStreamTmp, index, devices)
         })
       }
       else {
         navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }).then( localStreamTmp => {
-          setLocalStream(() => localStreamTmp)
+          setLocalStream(localStreamTmp)
           onStartCamera(localStreamTmp, -1, devices)
         }).catch(error => {
           toast({
@@ -177,18 +214,37 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
         })
       }
     })
-  }, [])
+  }
+
+  useEffect(() => {
+    console.log(localStream)
+  }, [localStream])
   
   const getAllCameraElements = () => {
     return cameraDevices.map((device, index) => {
-      return <MenuItem key={device.id} onClick={() => window.location.href = `/room/${roomId}/camera/${index}`}>{device.text}　{(index === cameraIndex && isCamera) ? <CheckIcon/> : ''}</MenuItem>
+      return <MenuItem key={device.id} onClick={() => {
+        meshRoom?.close()
+        setCameraChangeIndex(index) 
+      }}>{device.text}　{(index === cameraIndex && isCamera) ? <CheckIcon/> : ''}</MenuItem>
     })
   }
 
   const onDropout = () => {
+    
     if (window.confirm('本当に監視カメラを終了しますか？')) {
-      window.location.href = '/'
+      window.location.replace('/')
     }
+  }
+
+  const onActiveSound = () => {
+    speechSynthesis.speak(new SpeechSynthesisUtterance(''))
+
+    toast({
+      position: 'bottom',
+      description: "スピーカー出力を許可しました。",
+      status: "success",
+      duration: 3000,
+    })
   }
 
   return (
@@ -241,6 +297,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
                   title='カメラを増やす' 
                   url={`${window.location.origin}/room/${params?.roomId ?? ''}/camera`}
                 />
+                <MenuItem onClick={onActiveSound}><GiSpeaker/>　スピーカーを許可</MenuItem>
                 <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　サーバーに再接続</MenuItem>
                 <Divider mt={2} mb={2}/>
                 <MenuItem onClick={onDropout}><CloseIcon/>　カメラを切断</MenuItem>
@@ -250,7 +307,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
         </Wrap>
         <Box h="3px" m={2} bg="blue.400"/>
         <Center>
-          <ReactPlayer playsinline={true} url={localStream} playing muted controls={true} width='95vw' height='75vh'/>
+          <ReactPlayer playsinline={true} key={playerIndex} url={localStream} playing muted controls={true} width='95vw' height='75vh'/>
         </Center>
       <Footer/>
     </>
