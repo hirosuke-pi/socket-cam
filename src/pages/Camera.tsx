@@ -107,7 +107,10 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
           setCameraChangeIndex(data.data.cameraIndex)
         }
         else if (data.cmd === 'removeCamera') {
-          window.location.replace('/');
+          window.location.replace('/')
+        }
+        else if (data.cmd === 'reloadCamera') {
+          window.location.reload()
         }
         else if (data.cmd === 'soundBeep') {
           navigate('')
@@ -119,7 +122,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
             position: 'bottom',
             title: data?.data?.from + ' からメッセージ',
             description: data?.data?.text ?? '',
-            duration: 3000,
+            duration: 5000,
           })
           setTimeout(() => {
             const uttr = new SpeechSynthesisUtterance(data?.data?.text ?? '')

@@ -9,7 +9,7 @@ import {
   CheckIcon,
   DownloadIcon,
   BellIcon,
-
+  RepeatIcon
 } from '@chakra-ui/icons'
 
 import {
@@ -298,6 +298,14 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined, to
     }
   }
 
+  const onReloadCamera = () => {
+    props.room?.send({
+      cmd: 'reloadCamera',
+      peerId: props.video.peerId,
+      data: {}
+    })
+  }
+
   return (
     <Center py={6}>
       <Box
@@ -393,6 +401,8 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined, to
                     <DrawerImageButton remoteImages={motionImages} title={props.video?.config?.name ?? 'なし'}/>
                     <MenuItem onClick={onScreenshot}><BiScreenshot/>　スクリーンショット</MenuItem>
                     {createCameraZoomElement()}
+                    <Divider mt={2} mb={2}/>
+                    <MenuItem onClick={onReloadCamera}><RepeatIcon/>　カメラを再読み込み</MenuItem>
                     <Divider mt={2} mb={2}/>
                     <MenuItem onClick={onRemoveCamera}><CloseIcon/>　カメラを削除</MenuItem>
                   </MenuList>
