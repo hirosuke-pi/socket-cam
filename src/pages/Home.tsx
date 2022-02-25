@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, NavigateFunction } from "react-router-dom";
+import { Helmet } from "react-helmet-async"
 
 import Config from '../Config'
 import Header from '../components/Layouts/Header'
@@ -34,6 +35,12 @@ const Home = () => {
 
   return (
     <>
+      <Helmet
+        title={'Socket Cam'}
+        meta={[
+          { name: 'Socket Cam', content: 'あなたのスマホを監視カメラ代わりに。' }
+        ]}
+      />
       <Header/>
       <main className='flex flex-row flex-wrap-reverse justify-center text-zinc-800'>
         <article className='p-2 m-2 w-full md:w-2/5 flex justify-center items-center'>
@@ -45,7 +52,7 @@ const Home = () => {
               監視カメラ代わりに。
             </span><br/><br/><br/>
             <span className='text-2xl flex flex-wrap justify-center items-center'>
-              <button onClick={() => navigate('/dashboard')} className="m-2 w-full lg:w-fit bg-sky-400 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded">
+              <button onClick={() => window.location.href = '/dashboard'} className="m-2 w-full lg:w-fit bg-sky-400 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded">
                 <svg className="h-8 w-8 text-white inline-block" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <circle cx="12" cy="13" r="3" />  <path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h2m9 7v7a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" />  <line x1="15" y1="6" x2="21" y2="6" />  <line x1="18" y1="3" x2="18" y2="9" /></svg> 今すぐカメラを追加
               </button>
               
