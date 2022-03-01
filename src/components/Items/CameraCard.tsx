@@ -151,7 +151,7 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined, to
     setScreenshotFilename(props.video?.config?.name +'_'+ getDateTime() +'.jpg')
     onOpen()
 
-    setScreenshot(onScreenshotCanvas()?.toDataURL('image/jpg') ?? '')
+    setScreenshot(onScreenshotCanvas()?.toDataURL('image/jpeg') ?? '')
   }
 
   const onDownloadScreenshot = () => {
@@ -191,10 +191,8 @@ const CameraCard = (props: { video: CameraStream, room: MeshRoom | undefined, to
         if (matrix.length <= 0) {
           exitMotionInterval()
         }
-
-
         setMotionMatrix(matrix)
-      }, 2000)
+      }, 1000)
       setMotionInterval(intervalFunc)
     }
     else {

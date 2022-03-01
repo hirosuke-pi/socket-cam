@@ -308,7 +308,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
                   url={`${window.location.origin}/room/${params?.roomId ?? ''}/camera`}
                 />
                 <MenuItem onClick={onActiveSound}><GiSpeaker/>　スピーカーを許可</MenuItem>
-                <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　サーバーに再接続</MenuItem>
+                <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　ルームに再接続</MenuItem>
                 <Divider mt={2} mb={2}/>
                 <MenuItem onClick={onDropout}><CloseIcon/>　カメラを切断</MenuItem>
               </MenuList>

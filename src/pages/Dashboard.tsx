@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, RefObject } from 'react'
 import { Helmet } from "react-helmet-async"
+import { usePageVisibility } from 'react-page-visibility';
 
 import { GiSpeaker } from 'react-icons/gi'
 import { 
@@ -53,9 +54,27 @@ const Dashboard = () => {
   const [remoteVideo, setRemoteVideo] = useState<CameraStream[]>([]);
   const [remoteDashboard, setRemoteDashboard] = useState<DashboardConfig[]>([]);
   const [meshRoom, setMeshRoom] = useState<MeshRoom>()
+  const [roomId, setRoomId] = useState<string>(localStorage.getItem(Config().DASHBOARD_ID) ?? '')
+  const [isSmartPhone] = useState<boolean>(/iPhone|Android|iPad/.test(navigator.userAgent))
+  const isVisible = usePageVisibility()
+  const [firstVisible, setFirstVisible] = useState<boolean>(true)
   const toast = useToast()
 
-  const onStartStream = (roomId: string) => {
+  useEffect(() => {
+    if (!isVisible || !isSmartPhone) return
+    else if (isVisible && firstVisible) {
+      setFirstVisible(false)
+      return
+    }
+
+    reconnectRoom()
+  }, [isVisible])
+
+  const reconnectRoom = () => {
+    window.location.reload()
+  }
+
+  const onStartStream = () => {
     try {
       const room = peer.current.joinRoom(roomId, {
         mode: 'mesh'
@@ -187,13 +206,12 @@ const Dashboard = () => {
       duration: null,
     })
 
-    const room = localStorage.getItem(Config().DASHBOARD_ID)
-    if (room == null || room.length < 1) {
-      window.location.href = '/'
+    if (roomId === '') {
+      window.location.replace('/')
       return
     }
 
-    setTimeout(() => onStartStream(room), 1000)
+    setTimeout(() => onStartStream(), 1500)
   }, [])
 
   const onToastShow = (description: string, title: string|null = null,  isError: boolean = false) => {
@@ -312,7 +330,7 @@ const Dashboard = () => {
                     url={`${window.location.href}/${localStorage.getItem(Config().DASHBOARD_ID) ?? ''}`}
                   />
                   <MenuItem onClick={onSoundBroadCast}><GiSpeaker/>　全体に音を鳴らす</MenuItem>
-                  <MenuItem onClick={() => window.location.reload()}><RepeatIcon/>　サーバーに再接続</MenuItem>
+                  <MenuItem onClick={() => reconnectRoom()}><RepeatIcon/>　ルームに再接続</MenuItem>
                   <Divider mt={2} mb={2}/>
                   <MenuItem onClick={onRemoveAllCamera}><DeleteIcon/>　ダッシュボードを削除</MenuItem>
                 </MenuList>
