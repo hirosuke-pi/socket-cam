@@ -161,7 +161,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
   }
 
   useEffect(() => {
-    getCameraStream(0)
+    setCameraChangeIndex(0)
   }, [])
 
   useEffect(() => {
@@ -203,6 +203,7 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
           setLocalStream(localStreamTmp)
           onStartCamera(localStreamTmp, index, devices)
         })
+        setPlayerIndex(-1)
       }
       else {
         navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }).then( localStreamTmp => {
@@ -219,16 +220,13 @@ const Camera = ({isCamera = true}: {isCamera?: boolean}) => {
       }
     })
   }
-
-  useEffect(() => {
-    console.log(localStream)
-  }, [localStream])
   
   const getAllCameraElements = () => {
     return cameraDevices.map((device, index) => {
       return <MenuItem key={device.id} onClick={() => {
+        navigate(`/room/${params?.roomId ?? ''}/camera`)
         meshRoom?.close()
-        setCameraChangeIndex(index) 
+        setCameraChangeIndex(index)
       }}>{device.text}　{(index === cameraIndex && isCamera) ? <CheckIcon/> : ''}</MenuItem>
     })
   }

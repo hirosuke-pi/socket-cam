@@ -52,7 +52,7 @@ const DashboardConnection = (props: {dashboardName: string, remoteDashboard: Das
             <Text fontSize='md'><Icon mb={1} as={FaUser}/> ルーム参加者 ({props.remoteVideo.length + props.remoteDashboard.length + 1}人)：</Text>
           </WrapItem >
           <WrapItem >
-            <Tooltip label="このダッシュボード" aria-label='A tooltip'>
+            <Tooltip label="このダッシュボード (｀･∀･´)" aria-label='A tooltip'>
               <Box rounded='md' p={1} bg='green.100' color='green.800'>
                 <Text fontSize='xs' fontWeight='bold'><Icon mb={1} as={MdSpaceDashboard}/> {props.dashboardName}</Text>
               </Box>
