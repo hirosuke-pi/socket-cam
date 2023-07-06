@@ -1,7 +1,7 @@
 # Socket Cam
 
 - スマートフォンを、簡単に監視カメラ代わりにすることができるサービスです。
-- ホームページ: https://socket-cam.net/
+- ホームページ: https://socket-cam.vercel.app/
 
 
 ## 利用技術
